@@ -2,7 +2,7 @@
     "name": "dwij-simple-orm",
     "version": "1.0.0",
     "description": "SimpleORM - A Lightweight Object-Relational Mapper",
-    "main": "index.js",
+    "main": "src/index.js",
     "scripts": {
         "dev": "cross-env NODE_ENV=development nodemon app.js",
         "test": "cross-env NODE_ENV=test jest --detectOpenHandles --runInBand"
