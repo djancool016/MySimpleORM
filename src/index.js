@@ -1,5 +1,4 @@
-const database = require('./database')
-
 module.exports = {
-    database
+    database: require('./database'),
+    queryBuilder: require('./queryBuilder')
 }
