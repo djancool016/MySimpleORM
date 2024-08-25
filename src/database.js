@@ -1,24 +1,20 @@
 const mysql = require('mysql2/promise')
 const {Client, Pool} = require('pg')
-const {
-    db_config, 
-    db_system, 
-    logging, 
-    pool_connection_limit, 
-    pool_queue_limit
-} = require('../config')
 
 /**
  * Class for handling database connection
  */
 class DatabaseManager {
-    constructor(dbConnector){
+    constructor(dbConnector, config){
         this.dbConnector = dbConnector // this is a fuction to connect database
         this.db = null
+        this.db_config = config.db_config,
+        this.db_system = config.db_system,
+        this.logging = config.logging
     }
-    static getInstance(dbConnector) {
+    static getInstance(dbConnector, config) {
         if (!DatabaseManager.instance) {
-            DatabaseManager.instance = new DatabaseManager(dbConnector)
+            DatabaseManager.instance = new DatabaseManager(dbConnector, config)
         }
         return DatabaseManager.instance
     }
@@ -28,8 +24,8 @@ class DatabaseManager {
     async connect() {
         if(!this.db){
             try {
-                this.db = await this.dbConnector()
-                if(logging) console.log("Successfully connected to database")
+                this.db = await this.dbConnector(this.db_config, this.db_system)
+                if(this.logging) console.log("Successfully connected to database")
                 return this.db
             } catch (error) {
                 throw error
@@ -44,16 +40,16 @@ class DatabaseManager {
         if(this.db){
             try {
                 await this.db.end()
-                if(logging) console.log('Database connection closed.')
+                if(this.logging) console.log('Database connection closed.')
 
             } catch (error) {
-                if(logging) console.error('Error closing database connection', error)
+                if(this.logging) console.error('Error closing database connection', error)
                 throw error
             } finally {
                 this.db = null // Set database to null after closing
             }
         } else {
-            if(logging) console.warn('Database connection is already closed or was never initialized')
+            if(this.logging) console.warn('Database connection is already closed or was never initialized')
         }
     }
 }
@@ -62,14 +58,19 @@ class DatabaseManager {
  * Class for handling MYSQL pool connection
  */
 class PoolManager {
-    constructor(poolConnector) {
+    constructor(poolConnector, config) {
         this.pool = null
         this.poolConnector = poolConnector
+        this.db_config = config.db_config
+        this.db_system = config.db_system
+        this.logging = config.logging
+        this.pool_connection_limit = config.pool_connection_limit
+        this.pool_queue_limit = config.pool_queue_limit
     }
 
-    static getInstance(poolConnector) {
+    static getInstance(poolConnector, config) {
         if (!PoolManager.instance) {
-            PoolManager.instance = new PoolManager(poolConnector)
+            PoolManager.instance = new PoolManager(poolConnector, config)
         }
         return PoolManager.instance
     }
@@ -81,17 +82,13 @@ class PoolManager {
      * @param {Number} queueLimit - The maximum number of connection requests the pool will queue before returning an error. (Default: 0)
      * @returns - Mysql pool connection
      */
-    createPool(
-        waitForConnections = true,
-        connectionLimit = 10,
-        queueLimit = 0
-    ){
+    createPool(){
         if(!this.pool){
             try {
-                this.pool = poolConnector()
+                this.pool = poolConnector(this.connectionLimit, this.queueLimit, this.db_system, this.db_config)
                 return this.pool
             } catch (error) {
-                if(logging) console.error("Error creating a connection pool", error)
+                if(this.logging) console.error("Error creating a connection pool", error)
                 throw error
             }
         }
@@ -103,20 +100,20 @@ class PoolManager {
         if (this.pool){
             try {
                 await this.pool.end()
-                if(logging) console.log('Pool connection closed')
+                if(this.logging) console.log('Pool connection closed')
             } catch (error) {
-                if(logging) console.error('Error closing pool connection', error)
+                if(this.logging) console.error('Error closing pool connection', error)
                 throw error
             } finally {
                 this.pool = null // Set pool to null after closing
             }
         } else {
-            if(logging) console.warn('Pool connection is already closed or was never initialized')
+            if(this.logging) console.warn('Pool connection is already closed or was never initialized')
         }
     }
 }
 
-async function dbConnector(){
+async function dbConnector(db_config, db_system){
     switch(db_system){
         case 'mysql':
             return await mysql.createConnection(db_config)
@@ -129,13 +126,16 @@ async function dbConnector(){
     }
 }
 
-function poolConnector(waitForConnections = true, connectionLimit = pool_connection_limit, queueLimit = pool_queue_limit){
-
+function poolConnector(
+    connectionLimit, 
+    queueLimit,
+    db_system,
+    db_config,
+){
     switch(db_system){
         case 'mysql':
             return mysql.createPool({
                 ...db_config,
-                waitForConnections,
                 connectionLimit,
                 queueLimit
             })
@@ -150,10 +150,30 @@ function poolConnector(waitForConnections = true, connectionLimit = pool_connect
     }
 }
 
+
+/**
+ * Initializes the database instance using the init() method.
+ * This method sets up the database connection and returns an object containing the database instance and connection pool.
+ */
 module.exports = {
-    init: function () {
-        const db = DatabaseManager.getInstance(dbConnector)
-        const pool = PoolManager.getInstance(poolConnector)
+    /**
+    * Initializes the database and connection pool.
+    * 
+    * @param {Object} config - Database configuration object.
+    * @param {Object} config.db_config - Database configuration.
+    * @param {string} config.db_config.host - Database host.
+    * @param {string} config.db_config.user - Database user.
+    * @param {string} config.db_config.password - Database password.
+    * @param {string} config.db_config.database - Database name.
+    * @param {number} config.db_config.port - Database port.
+    * @param {string} config.db_system - Database system (e.g. 'mysql', 'postgres').
+    * @param {number} config.pool_connection_limit - Connection limit for the pool.
+    * @param {number} config.pool_queue_limit - Queue limit for the pool.
+    * @returns {Object} - An object containing the database instance and connection pool.
+    */
+    init: function (config) {
+        const db = DatabaseManager.getInstance(dbConnector, config)
+        const pool = PoolManager.getInstance(poolConnector, config)
         return {db, pool}
     }
 }
