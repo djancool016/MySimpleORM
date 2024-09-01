@@ -67,6 +67,7 @@ const errorCode = {
     '42883': createError(404, 'DB_Error', '42883', 'Undefined function'),
     '55000': createError(400, 'DB_Error', '55000', 'Object not in prerequisite state'),
     '57014': createError(400, 'DB_Error', '57014', 'Query canceled'),
+    '42703': createError(400, 'DB_Error', 'ER_BAD_FIELD_ERROR', 'Invalid field key'),
 
     // JWT Error Cases
     'ER_JWT_FAILED_CREATE_TOKEN': createError(401, 'JWT_Error', 'ER_JWT_FAILED_CREATE_TOKEN', 'Failed to create new token'),

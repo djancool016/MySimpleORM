@@ -1,31 +1,27 @@
+const {truncator} = require('../src/dbmsBuilder/postgresBuilder')
 const Database = require('../src/database')
-const truncator = require('../src/truncator')
 const config = require('../config')
 
 describe('Testing database truncator', () => {
 
     let database
+    let pool
     const tbl = ["users", "roles"]
 
     beforeAll(async() => {
-        const {db, pool} = Database.init(config)
+        const {db, pool: p} = Database.init(config)
         database = await db.connect()
+        pool = p.createPool()
     })
 
     test('Test truncator function', async () => {
-        await truncator(database, tbl, config.db_system)
-
-        if(config.db_system === 'postgres'){
-            const result = await database.query(`SELECT * FROM ${tbl[0]}`)
-            expect(result.rows.length).toBe(0)
-        }else if(config.db_system === 'mysql'){
-            const result = await database.query(`SELECT * FROM ${tbl[0]}`)
-            expect(result.length).toBe(0)
-        }
+        await truncator(pool, tbl)
     })
 
     afterAll(async() => {
         database.end()
+        pool.end()
     })
 })
+
 

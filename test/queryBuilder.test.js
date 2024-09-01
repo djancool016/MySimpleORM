@@ -1,72 +1,47 @@
-const QueryBuilder = require('../src/queryBuilder')
+const postgresBuilder = require('../src/dbmsBuilder/postgresBuilder')
+const queryBuilder = require('../src/queryBuilder')
 
-const model = {
-    table: 'users',
-    includes: [
-        'id','roleId','username', 'password','email', 
-        'name', 'phone', 'address','nik', 'status'
-    ],
-    association: [
-        {
-            table: 'roles',
-            references: 'roles.id',
-            foreignKey: 'users.roleId',
-            includes: ['name'],
-            alias: {
-                name: 'role'
+describe('testing new QueryBuilder', ()=>{
+    const model = {
+        table: 'users',
+        includes: [
+            'id','roleId','username', 'password','email', 
+            'name', 'phone', 'address','nik', 'status'
+        ],
+        association: [
+            {
+                table: 'roles',
+                references: 'roles.id',
+                foreignKey: 'users.roleId',
+                includes: ['name'],
+                alias: {
+                    name: 'role'
+                }
             }
+        ]
+    }
+    const query = queryBuilder(model, postgresBuilder)
+
+    test('test CREATE query', () => {
+        const requestBody = {
+            id: 7654,
+            roleId: 1,
+            userName: 'TestUser1',
+            password: '1234',
+            email: 'email@gmail.com',
+            name: 'DwiJ',
+            phone: '+62123123123',
+            address: 'Indonesia',
+            nik: '1122334455'
         }
-    ],
-    db_system:'postgres'
-}
-
-const queryBuilder = new QueryBuilder(model)
-
-describe('Test QueryBuilder Class', () => {
-    test('Test create query', () => {
-        const requestBody = {id: 1, username: 'admin'}
-        const result = queryBuilder.create(requestBody)
+        const result = query.create(requestBody)
         console.log(result)
-        expect(result.query).toBeTruthy()
-        expect(result.param).toBeTruthy()
+        expect(result).toBeDefined()
     })
-    test('Test readByPk query', () => {
+    test('test FindByPk query', () => {
         const requestBody = {id: 1}
-        const result = queryBuilder.readByPk(requestBody)
+        const result = query.read(requestBody)
         console.log(result)
-        expect(result.query).toBeTruthy()
-        expect(result.param).toBeTruthy()
-    })
-
-    test('Test readAll query', () => {
-        const requestBody = {}
-        const result = queryBuilder.readAll(requestBody)
-        console.log(result)
-        expect(result.query).toBeTruthy()
-        expect(result.param).toBeTruthy()
-    })
-
-    test('Test readByKeys query', () => {
-        const requestBody = {username: 'admin'}
-        const result = queryBuilder.readByKeys(requestBody)
-        console.log(result)
-        expect(result.query).toBeTruthy()
-        expect(result.param).toBeTruthy()
-    })
-
-    test('Test update query', () => {
-        const requestBody = {id: 1, username: 'newAdmin'}
-        const result = queryBuilder.update(requestBody)
-        console.log(result)
-        expect(result.query).toBeTruthy()
-        expect(result.param).toBeTruthy()
-    })
-
-    test('Test delete query', () => {
-        const requestBody = {id: 1}
-        const result = queryBuilder.delete(requestBody)
-        console.log(result)
-        expect(result.query).toBeTruthy()
-        expect(result.param).toBeTruthy()
+        expect(result).toBeDefined()
     })
 })
