@@ -73,17 +73,11 @@ class DatabaseManager {
 
 module.exports = {
     init: (config) => {
-        let dbmsBuilder
-        switch(config.db_system){
-            case 'postgres':
-                dbmsBuilder = require('../src/dbmsBuilder/postgresBuilder')
-                break
-            default:
-                throw new Error('Unknown database system.')
+
+        const {poolConnector, dbConnector} = require(`./${config.db_system}`).db
+        return {
+            databaseManager: DatabaseManager.getInstance(dbConnector, config), 
+            poolManager: PoolManager.getInstance(poolConnector, config)
         }
-        const {poolConnector, dbConnector} = dbmsBuilder
-        const databaseManager = DatabaseManager.getInstance(dbConnector, config)
-        const poolManager = PoolManager.getInstance(poolConnector, config)
-        return {databaseManager, poolManager}
     }
 }

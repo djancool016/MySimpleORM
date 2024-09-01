@@ -1,5 +1,3 @@
-const {Client, Pool} = require('pg')
-
 function createBuilder(table, requestBody){
     // extract keys and values from object data
     const keys = Object.keys(requestBody)
@@ -50,21 +48,21 @@ function joinBuilder(association) {
 function whereBuilder(table, includes, association, requestBody, patternMatching = false) {
 
     const includedKeys = []
-
+    let idx = 0
     const operationBuilder = (value) => {
         if(Array.isArray(value)){
-            const placeholder = value.map((_, index) => `$${index + 1}`).join(',')
+            const placeholder = value.map((_, index) => `$${idx += 1}`).join(',')
             return `IN (${placeholder})`
         }else if(typeof value === 'string' && /^\d+(,\d+)*$/.test(value)){
-            const placeholder = value.split(',').map((_, index) => `$${index + 1}`).join(', ')
+            const placeholder = value.split(',').map((_, index) => `$${idx += 1}`).join(', ')
             return `IN (${placeholder})`
         }else if(typeof value === 'string' && value.includes(',')){
-            const placeholder = value.split(',').map((_, index) => `$${index + 1}`).join(', ')
+            const placeholder = value.split(',').map((_, index) => `$${idx += 1}`).join(', ')
             return `IN (${placeholder})`
         }else if(typeof value === 'string' && value.length > 2 && patternMatching){
-            return `LIKE $1`
+            return `LIKE $${idx += 1}`
         }else{
-            return `= $1`
+            return `= $${idx += 1}`
         }
     }
 
@@ -89,7 +87,8 @@ function whereBuilder(table, includes, association, requestBody, patternMatching
             }
         }
     })
-    return `WHERE ${includedKeys.join(' AND ')}`
+    if(includedKeys.length > 0) return `WHERE ${includedKeys.join(' AND ')}`
+    return ``
 }
 function pagingBuilder(requestBody){
     
@@ -118,56 +117,40 @@ function deleteBuilder(table){
     return `DELETE FROM ${table} WHERE ${table}.id = $${1} RETURNING id`
 }
 
-async function getAllTable(pool, schema = 'public'){
+function paramsBuilder(requestBody, patternMatching = false, allowedArrayValue = false, excludedKeys = []) {
+    // Extract keys and values from object data
+    const keys = Object.keys(requestBody)
+    const params = keys
+        .filter(key => !excludedKeys.includes(key)) // Exclude keys present in excludedKeys
+        .flatMap(key => {
+            const value = requestBody[key]
+            if(Array.isArray(value) && allowedArrayValue){
+                return value
+            }else if(typeof value === 'string' && value.includes(',') && allowedArrayValue == true){
+                return value.split(',').map(val => isNaN(Number(val)) ? val : Number(val))
+            }else if(patternMatching && typeof value === 'string' && isNaN(Number(value))){
+                return [`%${value}%`]
+            }else{
+                return [value]
+            }
+        })
+
+    return params
+}
+async function runQuery(query, params, pool){
     try {
-        const result = await pool.query(`SELECT table_name FROM information_schema.tables WHERE table_schema=$1`, [schema])
-        return result.rows.map(row => row.table_name)
+        const result = await pool.query(query, params)
+        return result.rows
+
     } catch (error) {
-        console.error('Error fetching tables:', error)
+        console.error(error)
         throw error
     }
-}
-
-async function truncator(pool, tables = []){
-    try {
-        let tb
-        
-        if(tables.length == 0){
-            tb = await getAllTable(pool)
-        }else {
-            tb = tables
-        }
-        const query = `TRUNCATE TABLE ${tb.join(', ')} RESTART IDENTITY CASCADE`
-
-        await pool.query(query)
-
-        console.log(`Successfully truncate tables ${tb}`)
-    } catch (error) {
-        console.error('Error truncating tables:', error)
-        throw error
-    }
-}
-function poolConnector(
-    connectionLimit, 
-    queueLimit,
-    db_config,
-){
-    return new Pool({
-        ...db_config,
-        max: connectionLimit,
-        idleTimeoutMillis: queueLimit
-    })
-}
-
-async function dbConnector(db_config){
-    const client = new Client(db_config)
-    await client.connect()
-    return client
 }
 
 
 module.exports = { 
     createBuilder, selectBuilder, joinBuilder, 
     whereBuilder, pagingBuilder, updateBuilder, 
-    deleteBuilder, truncator, poolConnector, dbConnector
+    deleteBuilder, paramsBuilder, runQuery
 }

@@ -1,25 +1,19 @@
-const {truncator} = require('../src/dbmsBuilder/postgresBuilder')
-const Database = require('../src/database')
 const config = require('../config')
+const {poolManager, runTruncator} = require('../src').init(config)
 
 describe('Testing database truncator', () => {
 
-    let database
     let pool
-    const tbl = ["users", "roles"]
 
     beforeAll(async() => {
-        const {db, pool: p} = Database.init(config)
-        database = await db.connect()
-        pool = p.createPool()
+        pool = poolManager.connect()
     })
 
     test('Test truncator function', async () => {
-        await truncator(pool, tbl)
+        await runTruncator(pool)
     })
 
     afterAll(async() => {
-        database.end()
         pool.end()
     })
 })

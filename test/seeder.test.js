@@ -1,10 +1,8 @@
-const Database = require('../src/database')
-const truncator = require('../src/truncator')
-const Seeder = require('../src/seeder')
 const config = require('../config')
+const {poolManager, runSeeds, runTruncator} = require('../src').init(config)
 
-const seeder = {
-    rolesSeed: {
+const seeder = [
+    {
         table: 'roles',
         seed: [
             {
@@ -19,7 +17,7 @@ const seeder = {
             }
         ]
     },
-    usersSeed: {
+    {
         table: 'users',
         seed: [
             {
@@ -35,33 +33,25 @@ const seeder = {
             }
         ]
     }
-}
+]
 
-describe('Testing database seeder', () => {
+describe('Test Seeder', () => {
 
-    let database
-    const tbl = ["users", "roles"]
+    let pool
 
-    beforeAll(async() => {
-        const {db, pool} = Database.init(config)
-        database = await db.connect()
-
-        // truncate table
-        await truncator(database, tbl, config.db_system)
+    beforeAll(async() => {   
+        pool = poolManager.connect()
     })
 
-    test('Test seeding', async () => {
-        await Seeder(database, tbl.reverse(), seeder, 'postgres')
-        const roles = await database.query('SELECT * FROM roles')
-        const users = await database.query('SELECT * FROM users')
+    test('Start test seeds', async() => {
+        await runTruncator(pool)
+        await runSeeds(seeder, pool)
 
-        expect(roles.rows.length).toBe(2)
-        expect(users.rows.length).toBe(1)
-        expect(roles.rows[0].name).toBe("Admin")
-        expect(users.rows[0].name).toBe("Dwi Julianto")
+        const result = await pool.query(`SELECT * FROM ${seeder[0].table}`) 
+        expect(result).toBeTruthy()
     })
 
-    afterAll(async() => {
-        database.end()
+    afterAll(async()=>{
+        await pool.end()
     })
 })

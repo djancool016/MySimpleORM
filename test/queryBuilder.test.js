@@ -1,5 +1,5 @@
-const postgresBuilder = require('../src/dbmsBuilder/postgresBuilder')
-const queryBuilder = require('../src/queryBuilder')
+const config = require('../config')
+const {queryBuilder} = require('../src/utils/queryBuilder').init(config)
 
 describe('testing new QueryBuilder', ()=>{
     const model = {
@@ -20,7 +20,7 @@ describe('testing new QueryBuilder', ()=>{
             }
         ]
     }
-    const query = queryBuilder(model, postgresBuilder)
+    const query = queryBuilder(model)
 
     test('test CREATE query', () => {
         const requestBody = {

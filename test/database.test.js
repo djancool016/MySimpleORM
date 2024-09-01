@@ -1,5 +1,5 @@
 const config = require('../config')
-const {databaseManager, poolManager} = require('../src/database').init(config)
+const {databaseManager, poolManager} = require('../src').init(config)
 
 describe('Testing database connections', () => {
     let pool
