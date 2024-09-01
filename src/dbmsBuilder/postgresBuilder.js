@@ -1,3 +1,5 @@
+const {Client, Pool} = require('pg')
+
 function createBuilder(table, requestBody){
     // extract keys and values from object data
     const keys = Object.keys(requestBody)
@@ -145,9 +147,27 @@ async function truncator(pool, tables = []){
         throw error
     }
 }
+function poolConnector(
+    connectionLimit, 
+    queueLimit,
+    db_config,
+){
+    return new Pool({
+        ...db_config,
+        max: connectionLimit,
+        idleTimeoutMillis: queueLimit
+    })
+}
+
+async function dbConnector(db_config){
+    const client = new Client(db_config)
+    await client.connect()
+    return client
+}
+
 
 module.exports = { 
     createBuilder, selectBuilder, joinBuilder, 
     whereBuilder, pagingBuilder, updateBuilder, 
-    deleteBuilder, truncator
+    deleteBuilder, truncator, poolConnector, dbConnector
 }

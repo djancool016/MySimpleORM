@@ -21,9 +21,11 @@ const config = {
         database: process.env.DB,
         port: process.env.PORT
     },
+    pool_config: {
+        connection_limit: process.env.POOL_CONNECTION_LIMIT,
+        queue_limit: process.env.POOL_QUEUE_LIMIT,
+    },
     db_system: process.env.DB_SYSTEM,
-    pool_connection_limit: process.env.POOL_CONNECTION_LIMIT,
-    pool_queue_limit: process.env.POOL_QUEUE_LIMIT,
     logging: process.env.CONSOLE_LOG === '1',
     resetTables: process.env.TRUNCATING === '1',
     migrating: process.env.MIGRATING === '1',

@@ -1,28 +1,29 @@
-const {database} = require('../src/index')
 const config = require('../config')
+const {databaseManager, poolManager} = require('../src/database').init(config)
 
 describe('Testing database connections', () => {
-
-    let connectedDB
-    let connectedPool
-    const {db, pool} = database.init(config)
-
+    let pool
+    let db
     beforeAll(async() => {   
-        connectedDB = await db.connect()
-        connectedPool = pool.createPool()
+        db = await databaseManager.connect()
+        pool = poolManager.connect()
     })
     
-    test('test database instance', async() => {
-        expect(await connectedDB.query('SELECT 1')).toBeTruthy()
+    test('Test if database and pool connection present', async () => {
+        expect(pool).toBeTruthy()
+        expect(db).toBeTruthy
     })
-    
-    test('test pool instance', async() => {
-        expect(await connectedPool.query('SELECT 1')).toBeTruthy()
+    test('Test pool connection', async () => {
+        const result = await pool.query('SELECT 1')
+        expect(result).toBeTruthy()
     })
-    
-    afterAll(async() => {
-        await db.end()
+    test('Test database connection', async ()=> {
+        const result = await db.query('SELECT 1')
+        expect(result).toBeTruthy()
+    })
+    afterAll(async()=>{
         await pool.end()
+        await db.end()
     })
 })
 
