@@ -57,7 +57,7 @@ const errorCode = {
 
     // Postgres Error Cases
     '23000': createError(400, 'DB_Error', '23000', 'Integrity constraint violation'),
-    '23505': createError(409, 'DB_Error', '23505', 'Unique violation'),
+    '23505': createError(409, 'DB_Error', 'ER_DUP_ENTRY', 'Duplicate entry'),
     '23503': createError(400, 'DB_Error', 'ER_ROW_IS_REFERENCED_2', 'Row is referenced'),
     '23514': createError(400, 'DB_Error', '23514', 'Check violation'),
     '08003': createError(503, 'DB_Error', '08003', 'Connection does not exist'),
