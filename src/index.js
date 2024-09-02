@@ -8,6 +8,8 @@ module.exports = {
         const builder = require('./utils/queryBuilder').init(config)
         const UnitTestFramework = require('./utils/unitTestFramework')
         const controller = require('./controller')
+        const customError = require('./utils/customError')
+        const httpLogger = require('./utils/httpLogger')
 
         return {
             databaseManager,
@@ -20,7 +22,9 @@ module.exports = {
             builder,
             Model,
             controller,
-            UnitTestFramework
+            UnitTestFramework,
+            customError,
+            httpLogger
         }
     }
 }
