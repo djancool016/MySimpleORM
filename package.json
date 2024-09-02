@@ -11,6 +11,7 @@
     "author": "Dwi Julianto",
     "license": "ISC",
     "dependencies": {
+        "axios": "^1.7.7",
         "dotenv": "^16.3.1",
         "mysql2": "^3.6.2",
         "pg": "^8.12.0"

@@ -33,6 +33,18 @@ function endpointErrorHandler(error){
     }
 }
 
+function axiosErrorHandler(error) {
+    const err = error.response?.data || error
+    const errorDetail = errorCode[err.code] || errorCode.INTERNAL_SERVER_ERROR
+    const customError = new CustomError(errorDetail, err)
+    if(logging) console.error(customError)
+    return {
+        httpCode: customError.httpCode || errorCode.INTERNAL_SERVER_ERROR.httpCode, 
+        code: customError.code || errorCode.INTERNAL_SERVER_ERROR.code,
+        message: customError.message || errorCode.INTERNAL_SERVER_ERROR.message
+    }
+}
+
 const errorCode = {
     // MYSQL Database Error Cases
     'ER_ACCESS_DENIED_ERROR': createError(403, 'DB_Error', 'ER_ACCESS_DENIED_ERROR', 'Access denied'),
@@ -124,4 +136,4 @@ const errorCode = {
     'ER_GET_REFUSE_BODY': createError(400, 'Http_Error', 'ER_GET_REFUSE_BODY', 'Request body is not allowed in GET request')
 }
 
-module.exports = {errorCode, errorHandler, endpointErrorHandler}
+module.exports = {errorCode, errorHandler, endpointErrorHandler, axiosErrorHandler}
