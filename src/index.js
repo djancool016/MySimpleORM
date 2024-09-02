@@ -7,6 +7,7 @@ module.exports = {
         const Model = require('./model')
         const builder = require('./utils/queryBuilder').init(config)
         const UnitTestFramework = require('./utils/unitTestFramework')
+        const ApiTestFramework = require('./utils/api.test.framework')
         const controller = require('./controller')
         const customError = require('./utils/customError')
         const httpLogger = require('./utils/httpLogger')
@@ -23,6 +24,7 @@ module.exports = {
             Model,
             controller,
             UnitTestFramework,
+            ApiTestFramework,
             customError,
             httpLogger
         }
