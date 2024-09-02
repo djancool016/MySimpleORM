@@ -6,7 +6,8 @@ module.exports = {
         const {databaseManager, poolManager} = require('./database').init(config)
         const Model = require('./model')
         const builder = require('./utils/queryBuilder').init(config)
-        const unitTestFramework = require('./utils/unitTestFramework')
+        const UnitTestFramework = require('./utils/unitTestFramework')
+        const controller = require('./controller')
 
         return {
             databaseManager,
@@ -18,7 +19,8 @@ module.exports = {
             runTruncator,
             builder,
             Model,
-            unitTestFramework
+            controller,
+            UnitTestFramework
         }
     }
 }

@@ -28,7 +28,7 @@ class Model {
     }
     async findByKeys(requestBody, patternMatching = true) {
         if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY
-        return this.#runQuery('read', requestBody, [patternMatching])
+        return this.#runQuery('read', requestBody, [patternMatching, true])
     }
     async update(requestBody) {
         if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY

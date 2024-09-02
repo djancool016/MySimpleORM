@@ -1,9 +1,16 @@
 const config = require('../config')
-const {poolManager, runTruncator, runMigrations, runSeeds} = require('../src').init(config)
+const {
+    poolManager, 
+    runTruncator, 
+    runMigrations, 
+    runSeeds, 
+    Model, 
+    controller,
+    builder,
+    UnitTestFramework
+} = require('../src').init(config)
+
 const pool = poolManager.connect()
-const builder = require('../src/utils/queryBuilder').init(config)
-const UnitTestFramework = require('../src/utils/unitTestFramework')
-const Model = require('../src/model')
 
 const migrations = [
     {
@@ -125,7 +132,7 @@ const seeds = [
         ]
     }
 ]
-const model = {
+const modelObj = {
     table: 'users',
     includes: [
         'id','roleId','username', 'password','email', 
@@ -147,118 +154,124 @@ const testCases = {
     create: [
         {
             input: {
-                id: 7654,
-                roleId: 1,
-                userName: 'TestUser1',
-                password: '1234',
-                email: 'email@gmail.com',
-                name: 'DwiJ',
-                phone: '+62123123123',
-                address: 'Indonesia',
-                nik: '1122334455'
+                body: {
+                    id: 7654,
+                    roleId: 1,
+                    userName: 'TestUser1',
+                    password: '1234',
+                    email: 'email@gmail.com',
+                    name: 'DwiJ',
+                    phone: '+62123123123',
+                    address: 'Indonesia',
+                    nik: '1122334455'
+                }
             },
-            description: 'Success should returning truthly'
+            output: {httpCode: 201},
+            description: 'Success should returning affectedRows = 1'
         },{
             input: {
-                roleIdX: 1,
-                userName: 'TestUser1',
-                password: '1234',
-                email: 'email@gmail.com',
-                name: 'DwiJ',
-                phone: '+62123123123',
-                address: 'Indonesia',
-                nik: '1122334455'
+                body: {
+                    roleIdX: 1,
+                    userName: 'TestUser1',
+                    password: '1234',
+                    email: 'email@gmail.com',
+                    name: 'DwiJ',
+                    phone: '+62123123123',
+                    address: 'Indonesia',
+                    nik: '1122334455'
+                }
             },
-            output: {code: 'ER_BAD_FIELD_ERROR'},
-            description: 'Invalid input should throwing error code ER_BAD_FIELD_ERROR'
+            output: {httpCode: 400, code: 'ER_BAD_FIELD_ERROR'},
+            description: 'Invalid keys should returning httpCode 400'
         },{
-            input: undefined,
-            output: {code: 'ER_INVALID_BODY'},
-            description: 'Invalid input should throwing error code ER_INVALID_BODY'
-        }
-    ],
-    findByPk: [
-        {
-            input: 7654,
-            output: {data: [{id: 7654, username: 'TestUser1'}]},
-            description: 'Success should returning array of objects'
-        },{
-            input: 999999,
-            output: {code: 'ER_NOT_FOUND'},
-            description: 'Empty result should throwing error code ER_NOT_FOUND'
-        },{
-            input: undefined,
-            output: {code: 'ER_INVALID_BODY'},
-            description: 'Invalid input should throwing error code ER_INVALID_BODY'
-        }
-    ],
-    findAll: [
-        {
             input: {},
-            output: {data: [{id: 7654, username: 'TestUser1'}]},
-            description: 'Success should returning array of objects'
-        },{
-            input: undefined,
-            output: {code: 'ER_INVALID_BODY'},
-            description: 'Invalid input should throwing error code ER_INVALID_BODY'
+            output: {httpCode: 400, code: 'ER_INVALID_BODY'},
+            description: 'Invalid body should returning httpCode 400'
         }
     ],
-    findByKeys: [
+    read: [
         {
-            input: {id:7654, username: 'Tes'},
-            output: {data:[{id: 7654}]},
-            description: 'Success should returning array of objects'
+            input: {params:{id: 7654}},
+            output: {httpCode: 200, data: [{id: 7654, username: 'TestUser1'}]},
+            description: 'input params.id should run model.findByPk and returning array'
         },{
-            input: {id:1, username: 'adm', other: 'unknown key'},
-            output: {code: 'ER_NOT_FOUND'},
-            description: 'Empty result should throwing error code ER_NOT_FOUND'
+            input: {query:{id: [7654, 1]}},
+            output: {httpCode: 200, data: [{id: 7654, username: 'TestUser1'},{id: 1}]},
+            description: 'input query.id should run model.findByKeys and returning array'
         },{
-            input: undefined,
-            output: {code: 'ER_INVALID_BODY'},
-            description: 'Invalid input should throwing error code ER_INVALID_BODY'
+            input: {body: {id: 1, name: 'Admin'}},
+            output: {httpCode: 400, code: 'ER_GET_REFUSE_BODY'},
+            description: 'input body.id should return error code ER_GET_REFUSE_BODY'
+        },{
+            input: {},
+            output: {httpCode: 200, data: [{id: 7654, username: 'TestUser1'}]},
+            description: 'input empty request object should run findAll'
+        },{
+            input: {query: {id: 99999}},
+            output: {httpCode: 404, code: 'ER_NOT_FOUND'},
+            description: 'Not found should returning httpCode 404'
         }
     ],
     update: [
         {
-            input: {id: 7654, name: 'JuliantDwyne'},
-            description: 'Success should return truthly'
+            input: {
+                body: {id: 7654, name: 'JuliantDwyne'}
+            },
+            output: {httpCode: 200},
+            description: 'Success should returning truthly'
         },{
-            input: {id: 7654, nameX: 'JuliantDwyne'},
-            output: {code: 'ER_BAD_FIELD_ERROR'},
-            description: 'Invalid input should throwing error code ER_BAD_FIELD_ERROR'
+            input: {
+                body: {id: 7654, nameX: 'JuliantDwyne'}
+            },
+            output: {httpCode: 400, code: 'ER_BAD_FIELD_ERROR'},
+            description: 'Invalid keys should returning httpCode 400'
         },{
-            input: undefined,
-            output: {code: 'ER_INVALID_BODY'},
-            description: 'Invalid input should throwing error code ER_INVALID_BODY'
+            input: {},
+            output: {httpCode: 400, code: 'ER_INVALID_BODY'},
+            description: 'Invalid body should returning httpCode 400'
         }
     ],
     delete: [
         {
-            input: 7654,
-            description: 'Success should return truthly'
+            input: {params: {id: 7654}},
+            output: {httpCode: 200},
+            description: 'Success should returning truthly'
         },{
-            input: 9999,
-            output: {code: 'ER_NOT_FOUND'},
-            description: 'Empty result should throwing error code ER_NOT_FOUND'
+            input: {params: {id: 9999}},
+            output: {httpCode: 404, code: 'ER_NOT_FOUND'},
+            description: 'Not found should returning httpCode 404'
         },{
-            input: undefined,
-            output: {code: 'ER_INVALID_BODY'},
-            description: 'Invalid input should throwing error code ER_INVALID_BODY'
+            input: {},
+            output: {httpCode: 400, code: 'ER_INVALID_BODY'},
+            description: 'Invalid body should returning httpCode 400'
         }
     ]
 }
 
-const testModule = new Model(pool, model, builder)
+const testModule = () => {
+    const res = {}
+    const next = (req) => () => req.result
+    const model = new Model(pool, modelObj, builder)
 
-const test = new UnitTestFramework(testCases, testModule)
+    const test = (method, req) => controller[method](req, res, next(req), model)
+
+    return {
+        create: (req) => test('create', req),
+        read: (req) => test('read', req),
+        update: (req) => test('update', req),
+        delete: (req) => test('destroy', req)
+    }
+}
+
+const test = new UnitTestFramework(testCases, testModule())
 
 test.setBeforeAll = async () => {
     await runTruncator(pool)
     await runMigrations(migrations, pool)
     await runSeeds(seeds, pool)
 }
-
 test.setAfterAll = async () => {
     await pool.end()
 }
+
 test.runTest()
