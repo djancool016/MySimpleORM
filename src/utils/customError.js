@@ -37,7 +37,7 @@ function axiosErrorHandler(error) {
     const err = error.response?.data || error
     const errorDetail = errorCode[err.code] || errorCode.INTERNAL_SERVER_ERROR
     const customError = new CustomError(errorDetail, err)
-    if(logging) console.error(customError)
+    console.error(customError)
     return {
         httpCode: customError.httpCode || errorCode.INTERNAL_SERVER_ERROR.httpCode, 
         code: customError.code || errorCode.INTERNAL_SERVER_ERROR.code,
