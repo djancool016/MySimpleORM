@@ -23,14 +23,17 @@ class UnitTestFramework {
         describe(`Test ${method} method`, () => {
             testCases.forEach(testCase => {
                 const {input, output, description} = testCase // Destructure test case
-
                 test(description, async () => {
                     try {
                         let result
-                        let newInput = await resolveNestedPromises(input)
-                        if (typeof newInput === 'function') {
-                            newInput = await newInput()
+                        let newInput
+
+                        if (typeof input === 'function') {
+                            newInput = await resolveNestedPromises(input())
+                        }else{
+                            newInput = await resolveNestedPromises(input)
                         }
+                        
                         if (Array.isArray(newInput)) {
                             // If input is an array, spread it as multiple parameters
                             result = async () => this.testModule[method](...newInput)
