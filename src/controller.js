@@ -113,14 +113,25 @@ async function destroy(req, res, next, model){
  * @param {object} res - Express response object.
  * @param {string} reqKey - Key to send response from req object.
  */
-function sendResponse(req, res, reqKey = 'result') {
-    if(req[reqKey]){
-        const result = dataLogger({data: req[reqKey]})
-        res.status(result.httpCode).json(result)
-    }else {
-        res.status(500).json(statusLogger({
-            httpCode: 500, 
-            message:'BaseControllerBadResponse'
+function sendResponse(req, res, reqKey) {
+    try {
+        if(reqKey){
+            if(!req[reqKey]) throw statusLogger({
+                httpCode: 404,
+                message: `Empty ${reqKey}`
+            })
+            const result = dataLogger({data: req[reqKey]})
+            res.status(result.httpCode).json(result)
+        }
+        else if(req.result){
+            res.status(req.result.status).json(req.result)
+        }else {
+            throw new Error('Controller SendResponse Error')
+        }
+    } catch (error) {
+        res.status(error.httpCode || 500).json(statusLogger({
+            httpCode: error.httpCode || 500, 
+            message: 'Internal Server Error :' + error.message
         }))
     }
 }
