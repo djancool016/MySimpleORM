@@ -115,16 +115,17 @@ async function destroy(req, res, next, model){
  */
 function sendResponse(req, res, reqKey) {
     try {
-        if(reqKey){
+        if(req.result){
+            res.status(req.result.status).json(req.result)
+            return
+        }else if(reqKey){
             if(!req[reqKey]) throw statusLogger({
                 httpCode: 404,
                 message: `Empty ${reqKey}`
             })
             const result = dataLogger({data: req[reqKey]})
             res.status(result.httpCode).json(result)
-        }
-        else if(req.result){
-            res.status(req.result.status).json(req.result)
+            return
         }else {
             throw new Error('Controller SendResponse Error')
         }
