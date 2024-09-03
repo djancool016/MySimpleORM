@@ -28,7 +28,9 @@ class UnitTestFramework {
                     try {
                         let result
                         let newInput = await resolveNestedPromises(input)
-
+                        if (typeof newInput === 'function') {
+                            newInput = await newInput()
+                        }
                         if (Array.isArray(newInput)) {
                             // If input is an array, spread it as multiple parameters
                             result = async () => this.testModule[method](...newInput)
