@@ -111,10 +111,11 @@ async function destroy(req, res, next, model){
  * Sends response based on request result.
  * @param {object} req - Express request object.
  * @param {object} res - Express response object.
+ * @param {string} reqKey - Key to send response from req object.
  */
-function sendResponse(req, res) {
-    if(req.result){
-        res.status(req.result.httpCode).json(req.result)
+function sendResponse(req, res, reqKey = 'result') {
+    if(req[reqKey]){
+        res.status(req[reqKey].httpCode).json(req[reqKey])
     }else {
         res.status(500).json(statusLogger({
             httpCode: 500, 
