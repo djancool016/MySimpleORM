@@ -116,7 +116,7 @@ async function destroy(req, res, next, model){
 function sendResponse(req, res, reqKey) {
     try {
         if(req.result){
-            res.status(req.result.status).json(req.result)
+            res.status(req.result.httpCode).json(req.result)
             return
         }else if(reqKey){
             if(!req[reqKey]) throw statusLogger({
