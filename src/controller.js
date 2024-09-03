@@ -117,7 +117,7 @@ function sendResponse(req, res, next, reqKey) {
     try {
         if(req.result){
             res.status(req.result.httpCode).json(req.result)
-            return next()
+            return
 
         }else if(reqKey){
             if(!req[reqKey]) throw statusLogger({
@@ -126,7 +126,7 @@ function sendResponse(req, res, next, reqKey) {
             })
             const result = dataLogger({data: req[reqKey]})
             res.status(result.httpCode).json(result)
-            return next()
+            return
             
         }else {
             throw new Error('Controller SendResponse Error')
