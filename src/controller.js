@@ -113,11 +113,12 @@ async function destroy(req, res, next, model){
  * @param {object} res - Express response object.
  * @param {string} reqKey - Key to send response from req object.
  */
-function sendResponse(req, res, reqKey) {
+function sendResponse(req, res, next, reqKey) {
     try {
         if(req.result){
             res.status(req.result.httpCode).json(req.result)
-            return
+            return next()
+
         }else if(reqKey){
             if(!req[reqKey]) throw statusLogger({
                 httpCode: 404,
@@ -125,7 +126,8 @@ function sendResponse(req, res, reqKey) {
             })
             const result = dataLogger({data: req[reqKey]})
             res.status(result.httpCode).json(result)
-            return
+            return next()
+            
         }else {
             throw new Error('Controller SendResponse Error')
         }
