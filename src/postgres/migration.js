@@ -31,8 +31,8 @@ class MigrationQueryBuilder {
     }
     get references(){
         const constrait = `, CONSTRAINT fk_${this.tableName}_${this.column.references.table} `
-        const foreignKey = `FOREIGN KEY (${this.column.columnName}) `
-        const references = `REFERENCES ${this.column.references.table}(${this.column.references.key}) `
+        const foreignKey = `FOREIGN KEY ("${this.column.columnName}") `
+        const references = `REFERENCES ${this.column.references.table}("${this.column.references.key}") `
         this.query += constrait + foreignKey + references
         return this
     }
@@ -41,8 +41,8 @@ class MigrationQueryBuilder {
         return this
     }
     get timestamp(){
-        const createdAt = 'createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-        const updatedAt = `updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP `
+        const createdAt = '"createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+        const updatedAt = `"updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP `
         this.query += `${createdAt}, ${updatedAt}`
         return this
     }
@@ -81,6 +81,32 @@ async function createEnumDatatype(pool, tableName, columns){
     }
 }
 
+async function createUpdateTrigger(pool, tableName, updateFieldName = 'updateAt'){
+    try {
+        const query = `
+            DROP TRIGGER IF EXISTS update_${tableName}_updated_at ON ${tableName};
+
+            CREATE OR REPLACE FUNCTION update_updated_at_column()
+            RETURNS TRIGGER AS $$
+            BEGIN
+            NEW."${updateFieldName}" = NOW();
+            RETURN NEW;
+            END;
+            $$ language 'plpgsql';
+
+            CREATE TRIGGER update_${tableName}_updated_at
+            BEFORE UPDATE ON ${tableName}
+            FOR EACH ROW
+            EXECUTE PROCEDURE update_updated_at_column();
+            `
+        await pool.query(query)
+
+    } catch (error) {
+        console.error(error)
+        throw error
+    }
+}
+
 function migrationQuery({tableName, timestamp, columns}){
     
     if(timestamp) columns.push({timestamp: true})
@@ -106,6 +132,7 @@ async function runMigration({tableName, timestamp, columns}, pool){
 async function runMigrations(migrations = [], pool){
     return migrations.forEach(async migration => {
         await runMigration(migration, pool)
+        if(migration.timestamp) await createUpdateTrigger(pool, migration.tableName)
     })
 }
 
