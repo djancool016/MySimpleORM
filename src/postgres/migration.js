@@ -6,7 +6,7 @@ class MigrationQueryBuilder {
         this.column = column
     }
     get columnName(){
-        this.query += `${this.column.columnName} `
+        this.query += `"${this.column.columnName}" `
         return this
     }
     get dataType(){
@@ -98,7 +98,7 @@ async function runMigration({tableName, timestamp, columns}, pool){
 
     //get migration query
     const query = migrationQuery({tableName, timestamp, columns})
-
+    console.log(query)
     //run migration
     await pool.query(query)
 }
