@@ -2,76 +2,76 @@ const config = require('../config')
 const {builder: {queryBuilder}, modelMapper} = require('../src').init(config)
 
 const migrations = {
-    account: {
-        tableName: "account",
-        timestamp: false,
-        columns: [
-            {
-                columnName: "id",
-                dataType: "INT",
-                nullable: false,
-                autoIncrement: true
-            },
-            {
-                columnName: "description",
-                dataType: "VARCHAR(255)",
-                nullable: false
-            }
-        ]
-    }
-    ,
-    coa: {
-        tableName: "coa",
-        timestamp: false,
-        columns: [
-            {
-                columnName: "id",
-                dataType: "INT",
-                nullable: false,
-                autoIncrement: true
-            },
-            {
-                columnName: "accountId",
-                dataType: "INT",
-                nullable: false,
-                references: {table: 'account', key:'id'}
-            },
-            {
-                columnName: 'code',
-                dataType: 'INT',
-                nullable: false,
-                unique: true
-            },
-            {
-                columnName: "baseValue",
-                dataType: "INT",
-                nullable: false
-            },
-            {
-                columnName: "description",
-                dataType: "VARCHAR(255)",
-                nullable: false
-            }
-        ]
-    },
-    register: {
-        tableName: "register",
-        timestamp: false,
-        columns: [
-            {
-                columnName: "id",
-                dataType: "INT",
-                nullable: false,
-                autoIncrement: true
-            },
-            {
-                columnName: "description",
-                dataType: "VARCHAR(255)",
-                nullable: false
-            }
-        ]
-    }
-    ,
+    // account: {
+    //     tableName: "account",
+    //     timestamp: false,
+    //     columns: [
+    //         {
+    //             columnName: "id",
+    //             dataType: "INT",
+    //             nullable: false,
+    //             autoIncrement: true
+    //         },
+    //         {
+    //             columnName: "description",
+    //             dataType: "VARCHAR(255)",
+    //             nullable: false
+    //         }
+    //     ]
+    // }
+    // ,
+    // coa: {
+    //     tableName: "coa",
+    //     timestamp: false,
+    //     columns: [
+    //         {
+    //             columnName: "id",
+    //             dataType: "INT",
+    //             nullable: false,
+    //             autoIncrement: true
+    //         },
+    //         {
+    //             columnName: "accountId",
+    //             dataType: "INT",
+    //             nullable: false,
+    //             references: {table: 'account', key:'id'}
+    //         },
+    //         {
+    //             columnName: 'code',
+    //             dataType: 'INT',
+    //             nullable: false,
+    //             unique: true
+    //         },
+    //         {
+    //             columnName: "baseValue",
+    //             dataType: "INT",
+    //             nullable: false
+    //         },
+    //         {
+    //             columnName: "description",
+    //             dataType: "VARCHAR(255)",
+    //             nullable: false
+    //         }
+    //     ]
+    // },
+    // register: {
+    //     tableName: "register",
+    //     timestamp: false,
+    //     columns: [
+    //         {
+    //             columnName: "id",
+    //             dataType: "INT",
+    //             nullable: false,
+    //             autoIncrement: true
+    //         },
+    //         {
+    //             columnName: "description",
+    //             dataType: "VARCHAR(255)",
+    //             nullable: false
+    //         }
+    //     ]
+    // }
+    // ,
     entry: {
         tableName: "entry",
         timestamp: false,
@@ -101,8 +101,6 @@ const migrations = {
             }
         ]
     }
-    
-    
 }
 
 const includesObj = {
@@ -112,7 +110,7 @@ const includesObj = {
 }
 
 test('test modelMapper', () => {
-    const result = modelMapper('entry', migrations, includesObj)
+    const result = modelMapper('entry', migrations, includesObj, false)
     const query = queryBuilder(result)
     console.log(JSON.stringify(result, null, 4))
     console.log(query.read({id: 1}))

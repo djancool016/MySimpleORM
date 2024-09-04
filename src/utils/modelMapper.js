@@ -8,9 +8,9 @@
  * @returns {object} An object containing information about the table, included columns, and associations.
  */
 
-function modelMapper(model = '', migrations, includesObj = {}) {
-    const includes = includesObj[migrations[model].tableName] || migrations[model].columns.map(column => column.columnName);
-    const associations = migrations[model].columns
+function modelMapper(model = '', migrations, includesObj = {}, useReferences = false) {
+    const includes = includesObj[migrations[model].tableName] || migrations[model].columns.map(column => column.columnName)
+    const association = useReferences ? migrations[model].columns
         .filter(column => column.references)
         .map(column => {
             const table = column.references.table
@@ -22,7 +22,7 @@ function modelMapper(model = '', migrations, includesObj = {}) {
                     acc[key] = alias
                     return acc
                 }, {})
-            const association = column.association? modelMapper(table, migrations, includesObj).association : []
+            const association = column.association ? modelMapper(table, migrations, includesObj).association : []
             return {
                 table,
                 references: `${column.references.table}.${column.references.key}`,
@@ -31,12 +31,12 @@ function modelMapper(model = '', migrations, includesObj = {}) {
                 alias,
                 association
             }
-        })
+        }) : []
 
     return {
         table: migrations[model].tableName,
         includes,
-        association: associations
+        association
     }
 }
 
