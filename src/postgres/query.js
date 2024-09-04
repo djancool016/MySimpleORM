@@ -11,18 +11,20 @@ function selectBuilder(table, includes, alias, association){
     
     const queries = []
 
-    const selectQuery = (table, includes, alias) => {
-        if(includes.length > 0){
-            return includes.map(column => {
-                // If the column exists in the alias object, use the alias value, otherwise use the column itself
-                if(column && alias && alias[column]){
-                    return `${table}.${column} AS ${alias[column]}`
-                }else{
-                    return `${table}.${column}`
-                }
-            }).join(', ')
-        } 
-        return `${table}.*`
+    const selectQuery = (table, includes, alias, association) => {
+        const columnQueries = includes.length > 0 ? includes.map(column => {
+            if (alias && alias[column]) {
+                return `${table}.${column} AS ${alias[column]}`
+            } else {
+                return `${table}.${column}`
+            }
+        }).join(', ') : `${table}.*`
+
+        const associationQueries = Array.isArray(association) ? association.map(assoc => {
+            return selectQuery(assoc.table, assoc.includes, assoc.alias, assoc.association)
+        }).join(', ') : ''
+
+        return [columnQueries, associationQueries].filter(Boolean).join(', ')
     }
 
     queries.push(selectQuery(table, includes, alias))
@@ -30,20 +32,24 @@ function selectBuilder(table, includes, alias, association){
     if(association && Array.isArray(association) && association.length > 0){
         association.forEach( assoc => {
             const {table, includes, alias} = assoc
-            queries.push(selectQuery(table, includes, alias))
+            queries.push(selectQuery(table, includes, alias, assoc.association))
         })
     }
     return `SELECT ${queries.join(', ')}`
 }
 function joinBuilder(association) {
-
     if (!association || association.length === 0) return ''
 
-    return association.map(({ table, foreignKey, references, joinType }) =>{
+    return association.map(({ table, foreignKey, references, joinType, association: nestedAssociations }) => {
         const join = joinType ? joinType : 'INNER JOIN'
-        return `${join} ${table} ON ${foreignKey} = ${references}`
+        const joinClause = `${join} ${table} ON ${foreignKey} = ${references}`
+
+        // Rekursi untuk menangani nested associations
+        const nestedJoin = nestedAssociations ? joinBuilder(nestedAssociations) : ''
+
+        // Gabungkan join clause dengan nested join
+        return [joinClause, nestedJoin].filter(Boolean).join(' ')
     }).join(' ')
-    
 }
 function whereBuilder(table, includes, association, requestBody, patternMatching = false) {
 
