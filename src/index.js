@@ -11,6 +11,7 @@ module.exports = {
         const controller = require('./controller')
         const customError = require('./utils/customError')
         const httpLogger = require('./utils/httpLogger')
+        const modelMapper = require('./utils/modelMapper')
 
         return {
             databaseManager,
@@ -26,7 +27,8 @@ module.exports = {
             UnitTestFramework,
             ApiTestFramework,
             customError,
-            httpLogger
+            httpLogger,
+            modelMapper
         }
     }
 }
