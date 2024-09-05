@@ -7,35 +7,36 @@ function createBuilder(table, requestBody){
     
     return `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING id`
 }
-function selectBuilder(table, includes, alias, association){
-    
-    const queries = []
+function selectBuilder(table, includes=[], alias, association = []){
+
+    let query = `SELECT `
 
     const selectQuery = (table, includes, alias, association) => {
-        const columnQueries = includes.length > 0 ? includes.map(column => {
-            if (alias && alias[column]) {
-                return `${table}.${column} AS ${alias[column]}`
-            } else {
-                return `${table}.${column}`
+
+        includes.forEach(column => {
+            if(alias && alias[column]){
+                query += `${table}.${column} AS ${alias[column]}, `
+            }else {
+                query += `${table}.${column}, `
             }
-        }).join(', ') : `${table}.*`
+        })
 
-        const associationQueries = Array.isArray(association) ? association.map(assoc => {
-            return selectQuery(assoc.table, assoc.includes, assoc.alias, assoc.association)
-        }).join(', ') : ''
-
-        return [columnQueries, associationQueries].filter(Boolean).join(', ')
+        if(association && Array.isArray(association)){
+            association.forEach(assoc => {
+                selectQuery(assoc.table, assoc.includes, assoc.alias, assoc.association)
+            })
+        }
     }
 
-    queries.push(selectQuery(table, includes, alias))
+    selectQuery(table, includes, alias)
 
     if(association && Array.isArray(association) && association.length > 0){
         association.forEach( assoc => {
             const {table, includes, alias} = assoc
-            queries.push(selectQuery(table, includes, alias, assoc.association))
+            selectQuery(table, includes, alias, assoc.association)
         })
     }
-    return `SELECT ${queries.join(', ')}`
+    return query.slice(0, query.length - 2)
 }
 function joinBuilder(association) {
     if (!association || association.length === 0) return ''
