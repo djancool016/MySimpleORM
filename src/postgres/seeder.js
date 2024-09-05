@@ -36,7 +36,22 @@ async function runSeeds(seeds = [], pool){
         }
         for(const seed of seeds){
             await runSeed(seed, pool)
+            await updatePrimaryKeySequence(seed.table, 'id', pool)
         }
+    } catch (error) {
+        console.error(error.message)
+        throw error
+    }
+}
+
+async function updatePrimaryKeySequence(table, columnName, pool){
+    try {
+        const sequenceName = await pool.query(`SELECT pg_get_serial_sequence('${table}', '${columnName}');`)
+        const name = sequenceName.rows[0].pg_get_serial_sequence
+        const query = `SELECT setval('${name}', (SELECT COALESCE(MAX(${columnName}), 1) FROM ${table}) + 1);`
+        
+        await pool.query(query)
+
     } catch (error) {
         console.error(error.message)
         throw error

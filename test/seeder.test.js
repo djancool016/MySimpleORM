@@ -22,7 +22,7 @@ const seeder = [
         seed: [
             {
                 id: 1,
-                roleId: 1,
+                role_id: 1,
                 username: 'admin',
                 password: '$2b$10$h6Uo0u07tzgVf14jTsIPHOskqDUdDwLsZeMFCxX5rm8BsEJTePZd.',
                 email: 'admin@Email.com',

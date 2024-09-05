@@ -58,7 +58,7 @@ class Model {
             const params = this.paramsBuilder(paramsBody, ...otherParams)
 
             if(!query) throw errorCode.ER_QUERY_ERROR
-    
+
             const result = await this.runQuery(query, params, this.pool)
     
             if(Array.isArray(result) && result.length == 0 || result.affectedRows == 0){

@@ -48,7 +48,7 @@ const migrations = [
                 autoIncrement: true,
             },
             {
-                columnName: "roleId",
+                columnName: "role_id",
                 dataType: "INT",
                 nullable: true,
                 references: {table:'roles', key:'id'}
@@ -120,7 +120,7 @@ const seeds = [
         seed: [
             {
                 id: 1,
-                roleId: 1,
+                role_id: 1,
                 username: 'admin',
                 password: '$2b$10$h6Uo0u07tzgVf14jTsIPHOskqDUdDwLsZeMFCxX5rm8BsEJTePZd.',
                 email: 'admin@Email.com',
@@ -135,14 +135,14 @@ const seeds = [
 const modelObj = {
     table: 'users',
     includes: [
-        'id','roleId','username', 'password','email', 
+        'id','role_id','username', 'password','email', 
         'name', 'phone', 'address','nik', 'status'
     ],
     association: [
         {
             table: 'roles',
             references: 'roles.id',
-            foreignKey: 'users.roleId',
+            foreignKey: 'users.role_id',
             includes: ['name'],
             alias: {
                 name: 'role'
@@ -156,7 +156,7 @@ const testCases = {
             input: {
                 body: {
                     id: 7654,
-                    roleId: 1,
+                    role_id: 1,
                     userName: 'TestUser1',
                     password: '1234',
                     email: 'email@gmail.com',
@@ -171,7 +171,7 @@ const testCases = {
         },{
             input: {
                 body: {
-                    roleIdX: 1,
+                    role_idX: 1,
                     userName: 'TestUser1',
                     password: '1234',
                     email: 'email@gmail.com',

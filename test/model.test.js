@@ -41,7 +41,7 @@ const migrations = [
                 autoIncrement: true,
             },
             {
-                columnName: "roleId",
+                columnName: "role_id",
                 dataType: "INT",
                 nullable: true,
                 references: {table:'roles', key:'id'}
@@ -113,7 +113,7 @@ const seeds = [
         seed: [
             {
                 id: 1,
-                roleId: 1,
+                role_id: 1,
                 username: 'admin',
                 password: '$2b$10$h6Uo0u07tzgVf14jTsIPHOskqDUdDwLsZeMFCxX5rm8BsEJTePZd.',
                 email: 'admin@Email.com',
@@ -128,14 +128,14 @@ const seeds = [
 const model = {
     table: 'users',
     includes: [
-        'id','roleId','username', 'password','email', 
+        'id','role_id','username', 'password','email', 
         'name', 'phone', 'address','nik', 'status'
     ],
     association: [
         {
             table: 'roles',
             references: 'roles.id',
-            foreignKey: 'users.roleId',
+            foreignKey: 'users.role_id',
             includes: ['name'],
             alias: {
                 name: 'role'
@@ -147,9 +147,22 @@ const testCases = {
     create: [
         {
             input: {
+                role_id: 1,
+                username: 'asdasdasd',
+                password: 'asdasdasdas',
+                email: 'email@gmail.com',
+                name: 'DwiJ',
+                phone: '+62123123123',
+                address: 'Indonesia',
+                nik: 'qweqweqweqwe'
+            },
+            description: 'Success should returning truthly'
+        },
+        {
+            input: {
                 id: 7654,
-                roleId: 1,
-                userName: 'TestUser1',
+                role_id: 1,
+                username: 'TestUser1',
                 password: '1234',
                 email: 'email@gmail.com',
                 name: 'DwiJ',
@@ -160,8 +173,8 @@ const testCases = {
             description: 'Success should returning truthly'
         },{
             input: {
-                roleIdX: 1,
-                userName: 'TestUser1',
+                role_idX: 1,
+                username: 'TestUser1',
                 password: '1234',
                 email: 'email@gmail.com',
                 name: 'DwiJ',
@@ -253,8 +266,8 @@ const testModule = new Model(pool, model, builder)
 const test = new UnitTestFramework(testCases, testModule)
 
 test.setBeforeAll = async () => {
-    await runTruncator(pool)
     await runMigrations(migrations, pool)
+    await runTruncator(pool)
     await runSeeds(seeds, pool)
 }
 
