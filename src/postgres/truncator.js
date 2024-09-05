@@ -1,7 +1,15 @@
-async function getAllTable(pool, schema = 'public'){
+async function getAllTables(pool, schema = 'public'){
     try {
-        const result = await pool.query(`SELECT table_name FROM information_schema.tables WHERE table_schema=$1`, [schema])
-        return result.rows.map(row => row.table_name)
+        const query = `SELECT table_name FROM information_schema.tables WHERE table_schema=$1`
+   
+        const params = [schema]
+
+        const result = await pool.query(query, params)
+
+        const resultMap = result.rows.map(row => row.table_name)
+
+        return resultMap
+
     } catch (error) {
         console.error('Error fetching tables:', error)
         throw error
@@ -15,7 +23,9 @@ async function checkTablesIsEmpty(pool, tables = []){
 
         for (const table of tables) {
 
-            const result = await pool.query(`SELECT COUNT(*) FROM ${table}`)
+            const query = `SELECT COUNT(*) FROM ${table}`
+
+            const result = await pool.query(query)
 
             if (result.rows[0].count > 0) filledTables.push(table)
         }
@@ -28,10 +38,10 @@ async function checkTablesIsEmpty(pool, tables = []){
     }
 }
 
-async function runTruncator(pool, tables = []){
+async function runTruncator(pool, tables = [], schema = 'public', logging = true){
     try {
         // table list
-        const tb = tables.length == 0 ? await getAllTable(pool) : tables
+        const tb = tables.length == 0 ? await getAllTables(pool, schema) : tables
         
         // check if table empty
         const filledTables = await checkTablesIsEmpty(pool, tb)
@@ -40,6 +50,7 @@ async function runTruncator(pool, tables = []){
             // define query
             const query = `TRUNCATE TABLE ${filledTables.join(', ')} RESTART IDENTITY CASCADE`
 
+            if(logging) console.log(`Truncate Query : ${query}`)
             // start truncate
             await pool.query(query)
 
@@ -59,4 +70,11 @@ async function runTruncator(pool, tables = []){
     }
 }
 
-module.exports = {runTruncator, getAllTable}
+module.exports = {
+    init: (config) => {
+        return {
+            runTruncator: (pool, tables = []) => runTruncator(pool, tables = [], config.schema, config.logging), 
+            getAllTables: (pool) => getAllTables(pool, config.schema, config.logging)
+        }
+    }
+}

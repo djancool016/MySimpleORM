@@ -1,31 +1,14 @@
 const config = require('../config')
-const {queryBuilder} = require('../src/utils/queryBuilder').init(config)
+const {builder: {queryBuilder}} = require('../src').init(config)
+const {userModel} = require('./dataSamples')
 
 describe('testing new QueryBuilder', ()=>{
-    const model = {
-        table: 'users',
-        includes: [
-            'id','roleId','username', 'password','email', 
-            'name', 'phone', 'address','nik', 'status'
-        ],
-        association: [
-            {
-                table: 'roles',
-                references: 'roles.id',
-                foreignKey: 'users.roleId',
-                includes: ['name'],
-                alias: {
-                    name: 'role'
-                }
-            }
-        ]
-    }
-    const query = queryBuilder(model)
+    const query = queryBuilder(userModel)
 
     test('test CREATE query', () => {
         const requestBody = {
             id: 7654,
-            roleId: 1,
+            role_id: 1,
             userName: 'TestUser1',
             password: '1234',
             email: 'email@gmail.com',

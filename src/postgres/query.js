@@ -143,20 +143,30 @@ function paramsBuilder(requestBody, patternMatching = false, allowedArrayValue =
 
     return params
 }
-async function runQuery(query, params, pool){
+async function runQuery(query, params, pool, logging = true){
     try {
+        if(logging) console.log(`Run Query : ${query}`)
+
         const result = await pool.query(query, params)
+
+        if(logging) console.log(`Result : ${JSON.stringify(result.rows)}`)
+
         return result.rows
 
     } catch (error) {
-        console.error(error)
+        console.error(`Run Query Error : `, error)
         throw error
     }
 }
 
 
-module.exports = { 
-    createBuilder, selectBuilder, joinBuilder, 
-    whereBuilder, pagingBuilder, updateBuilder, 
-    deleteBuilder, paramsBuilder, runQuery
+module.exports = {
+    init: (config) => {
+        return { 
+            runQuery: (query, params, pool) => runQuery(query, params, pool, config.logging),
+            createBuilder, selectBuilder, joinBuilder, 
+            whereBuilder, pagingBuilder, updateBuilder, 
+            deleteBuilder, paramsBuilder
+        }
+    }
 }

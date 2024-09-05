@@ -1,39 +1,6 @@
 const config = require('../config')
-const {poolManager, runTruncator, runSeeds} = require('../src').init(config)
-
-const seeds = [
-    {
-        table: 'roles',
-        seed: [
-            {
-                id: 1,
-                name: "Admin",
-                description: "Full access to system features."
-            },
-            {
-                id: 2,
-                name: "Manager",
-                description: "Supervise loan operations."
-            }
-        ]
-    },
-    {
-        table: 'users',
-        seed: [
-            {
-                id: 1,
-                role_id: 1,
-                username: 'admin',
-                password: '$2b$10$h6Uo0u07tzgVf14jTsIPHOskqDUdDwLsZeMFCxX5rm8BsEJTePZd.',
-                email: 'admin@Email.com',
-                name: 'Dwi Julianto',
-                phone: '213546879213',
-                address: 'Semarang, Indonesia',
-                nik: '7722323656989'
-            }
-        ]
-    }
-]
+const {poolManager, runTruncator, runSeeds, runMigrations} = require('../src').init(config)
+const {seeds} = require('./dataSamples')
 
 describe('Testing database truncator', () => {
 

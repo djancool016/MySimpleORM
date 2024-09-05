@@ -74,7 +74,7 @@ class DatabaseManager {
 module.exports = {
     init: (config) => {
 
-        const {poolConnector, dbConnector} = require(`./${config.db_system}`).db
+        const {poolConnector, dbConnector} = require(`./${config.db_system}`).init(config).db
         return {
             databaseManager: DatabaseManager.getInstance(dbConnector, config), 
             poolManager: PoolManager.getInstance(poolConnector, config)

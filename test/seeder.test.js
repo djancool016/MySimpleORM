@@ -1,41 +1,8 @@
 const config = require('../config')
-const {poolManager, runSeeds, runTruncator} = require('../src').init(config)
+const {poolManager, runSeeds, runTruncator, runMigrations} = require('../src').init(config)
+const {migrations, seeds} = require('./dataSamples')
 
-const seeder = [
-    {
-        table: 'roles',
-        seed: [
-            {
-                id: 1,
-                name: "Admin",
-                description: "Full access to system features."
-            },
-            {
-                id: 2,
-                name: "Manager",
-                description: "Supervise loan operations."
-            }
-        ]
-    },
-    {
-        table: 'users',
-        seed: [
-            {
-                id: 1,
-                role_id: 1,
-                username: 'admin',
-                password: '$2b$10$h6Uo0u07tzgVf14jTsIPHOskqDUdDwLsZeMFCxX5rm8BsEJTePZd.',
-                email: 'admin@Email.com',
-                name: 'Dwi Julianto',
-                phone: '213546879213',
-                address: 'Semarang, Indonesia',
-                nik: '7722323656989'
-            }
-        ]
-    }
-]
-
-describe('Test Seeder', () => {
+describe('Test seeds', () => {
 
     let pool
 
@@ -44,10 +11,11 @@ describe('Test Seeder', () => {
     })
 
     test('Start test seeds', async() => {
+        await runMigrations(migrations, pool)
         await runTruncator(pool)
-        await runSeeds(seeder, pool)
+        await runSeeds(seeds, pool)
 
-        const result = await pool.query(`SELECT * FROM ${seeder[0].table}`) 
+        const result = await pool.query(`SELECT * FROM ${seeds[0].table}`) 
         expect(result).toBeTruthy()
     })
 

@@ -1,5 +1,3 @@
-const { paramsBuilder } = require("../postgres/query")
-
 class QueryBuilder {
     constructor(model, requestBody, dbmsBuilder, patternMatching){
         this.query = ''
@@ -62,7 +60,7 @@ class QueryBuilder {
 module.exports = {
     init: (config) => {
         
-        const {query} = require(`../${config.db_system}`)
+        const {query} = require(`../${config.db_system}`).init(config)
 
         return {
             queryBuilder: (model) => {

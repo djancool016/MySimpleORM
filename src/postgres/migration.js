@@ -54,7 +54,7 @@ class MigrationQueryBuilder {
     }
 }
 
-async function createEnumDatatype(pool, tableName, columns){
+async function createEnumDatatype(pool, tableName, columns, logging){
     try {
         for(const column of columns){
             const{ columnName, dataType } = column
@@ -72,7 +72,11 @@ async function createEnumDatatype(pool, tableName, columns){
                 END
                 $$;
                 `
+                if(logging) console.log(`Create ENUM Query: ${query.replace(/\s+/g, ' ').trim()}`)
+
                 await pool.query(query)
+
+                if(logging) console.log(`Postgres ENUM ${tableName}_${columnName} created`)
             }
         }
     } catch (error) {
@@ -89,37 +93,67 @@ function migrationQuery({tableName, timestamp, columns}){
         return new MigrationQueryBuilder({tableName, timestamp, column}).build
     }).join(', ')
 
-    return `CREATE TABLE IF NOT EXISTS ${tableName} (${fieldQuery}); 
+    const query =  `CREATE TABLE IF NOT EXISTS ${tableName} (${fieldQuery}); 
         DROP TRIGGER IF EXISTS update_${tableName}_updated_at ON ${tableName};
         CREATE TRIGGER update_${tableName}_updated_at
         BEFORE UPDATE ON ${tableName}
         FOR EACH ROW
         EXECUTE PROCEDURE update_updated_at_column();`
+    
+    return query.replace(/\s+/g, ' ').trim()
 }
 
-async function runMigration({tableName, timestamp, columns}, pool){
-    // create postgres enum datatype if columns has ENUM data type
-    await createEnumDatatype(pool, tableName, columns)
+async function runMigration({tableName, timestamp, columns}, pool, logging = true){
+    try {
+        // create postgres enum datatype if columns has ENUM data type
+        await createEnumDatatype(pool, tableName, columns, logging)
 
-    //get migration query
-    const query = migrationQuery({tableName, timestamp, columns})
+        //get migration query
+        const query = migrationQuery({tableName, timestamp, columns})
 
-    //run migration
-    await pool.query(query)
+        if(logging) console.log(`Migration Query: ${query}`)
+
+        //run migration
+        await pool.query(query)
+
+        console.log(`Successfully migrate table ${tableName}`)
+
+        return true
+
+    } catch (error) {
+        
+        console.error(`Migration table ${tableName} failed`, error)
+        throw error
+    }
 }
 
-async function runMigrations(migrations = [], pool){
-    pool.query(`
-        CREATE OR REPLACE FUNCTION update_updated_at_column()
-        RETURNS TRIGGER AS $$
-        BEGIN
-        NEW.updated_at = NOW();
-        RETURN NEW;
-        END; $$ LANGUAGE 'plpgsql';
-    `)
-    return migrations.forEach(async migration => {
-        await runMigration(migration, pool)
-    })
+async function runMigrations(migrations = [], pool, logging){
+    try {
+
+        if(migrations.length === 0) throw new Error('Migration Aborted, Empty migrations data!')
+
+        pool.query(`
+            CREATE OR REPLACE FUNCTION update_updated_at_column()
+            RETURNS TRIGGER AS $$
+            BEGIN
+            NEW.updated_at = NOW();
+            RETURN NEW;
+            END; $$ LANGUAGE 'plpgsql';
+        `)
+        migrations.forEach(async migration => {
+            await runMigration(migration, pool, logging)
+        })
+
+    } catch (error) {
+        throw error
+    }
 }
 
-module.exports = {runMigration, runMigrations}
+module.exports = {
+    init: (config) => {
+        return {
+            runMigration : ({tableName, timestamp, columns}, pool) => runMigration({tableName, timestamp, columns}, pool, config.logging), 
+            runMigrations : (migrations = [], pool) => runMigrations(migrations, pool, config.logging)
+        }
+    }
+}

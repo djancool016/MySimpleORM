@@ -31,7 +31,7 @@ const migrations = {
                 autoIncrement: true
             },
             {
-                columnName: "accountId",
+                columnName: "account_id",
                 dataType: "INT",
                 nullable: false,
                 references: {table: 'account', key:'id'}
@@ -43,7 +43,7 @@ const migrations = {
                 unique: true
             },
             {
-                columnName: "baseValue",
+                columnName: "base_value",
                 dataType: "INT",
                 nullable: false
             },
@@ -83,13 +83,13 @@ const migrations = {
                 autoIncrement: true
             },
             {
-                columnName: "registerId",
+                columnName: "register_id",
                 dataType: "INT",
                 nullable: false,
                 references: {table:'register', key:'id'}
             },
             {
-                columnName: "coaCode",
+                columnName: "coa_code",
                 dataType: "INT",
                 nullable: false,
                 references: {table: 'coa', key: 'code'}
