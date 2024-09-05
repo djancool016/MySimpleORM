@@ -1,7 +1,7 @@
 module.exports = {
     init: (config) => {
 
-        const { runMigration, runMigrations } = require('./migration').init(config)
+        const { runMigrations } = require('./migration')
         const { runSeed, runSeeds } = require('./seeder')
         const query = require('./query').init(config)
         const db = require('./db')
@@ -11,7 +11,6 @@ module.exports = {
             db,
             query,
             getAllTables,
-            runMigration,
             runMigrations,
             runSeed,
             runSeeds,

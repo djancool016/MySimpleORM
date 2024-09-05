@@ -1,4 +1,4 @@
-class MigrationQueryBuilder {
+class CreateTableQueryBuilder {
     constructor({column, tableName, timestamp}){
         this.query = ''
         this.ts = timestamp
@@ -54,8 +54,34 @@ class MigrationQueryBuilder {
     }
 }
 
-async function createEnumDatatype(pool, tableName, columns, logging){
-    try {
+class MigrationQueryBuilder {
+    constructor(migrations = [], tableBuilder = CreateTableQueryBuilder){
+        this.query = ''
+        this.tableBuilder = tableBuilder
+        this.migrations = migrations
+    }
+    triggerFunctionQuery(trigger = 'update', column = 'updated_at'){
+        this.query += `CREATE OR REPLACE FUNCTION ${trigger}_${column}_column()
+            RETURNS TRIGGER AS $$
+            BEGIN
+            NEW.${column} = NOW();
+            RETURN NEW;
+            END; $$ LANGUAGE 'plpgsql'; `.replace(/\s+/g, ' ').trim()
+        return this
+    }
+    dropTriggerQuery(tableName, trigger = 'update', column = 'updated_at'){
+        this.query += ` DROP TRIGGER IF EXISTS ${trigger}_${tableName}_${column} ON ${tableName}; `
+        return this
+    }
+    createTriggerQuery(tableName, trigger = 'update', column = 'updated_at'){
+        this.query += `CREATE TRIGGER ${trigger}_${tableName}_${column}
+            BEFORE UPDATE ON ${tableName}
+            FOR EACH ROW
+            EXECUTE PROCEDURE ${trigger}_${column}_column(); 
+        `.replace(/\s+/g, ' ').trim()
+        return this
+    }
+    createEnumQuery({tableName, columns}){
         for(const column of columns){
             const{ columnName, dataType } = column
             if(typeof dataType == 'string' && dataType.startsWith("ENUM(")){
@@ -64,99 +90,59 @@ async function createEnumDatatype(pool, tableName, columns, logging){
                     .split(",") // Split by comma to get individual values
                     .map(value => value.trim().replace(/'/g, "")) // Trim whitespace and remove single quotes
                 
-                const query = `DO $$
+                this.query += `DO $$
                 BEGIN
                     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '${tableName}_${columnName}') THEN
-                        CREATE TYPE ${tableName}_${columnName} AS ENUM (${enumValues.map(value => `'${value}'`).join(", ")});
+                    CREATE TYPE ${tableName}_${columnName} AS ENUM (${enumValues.map(value => `'${value}'`).join(", ")});
                     END IF;
                 END
-                $$;
-                `
-                if(logging) console.log(`Create ENUM Query: ${query.replace(/\s+/g, ' ').trim()}`)
-
-                await pool.query(query)
-
-                if(logging) console.log(`Postgres ENUM ${tableName}_${columnName} created`)
+                $$; `.replace(/\s+/g, ' ').trim()
             }
         }
-    } catch (error) {
-        console.error(error)
-        throw error
+        return this
+    }
+    get build(){
+        // create trigger function
+        this.triggerFunctionQuery()
+
+        // iterate migrations to create tableQuery and trigger for table
+        this.migrations.forEach(migration => {
+            const {tableName, timestamp, columns} = migration
+
+            if(timestamp) columns.push({timestamp: true})
+
+            this.createEnumQuery(migration)
+
+            const tableQuery = columns.map(column => {
+                return new this.tableBuilder({column, tableName, timestamp}).build
+            }).join(', ')
+
+            this.query += ` CREATE TABLE IF NOT EXISTS ${tableName} (${tableQuery}); `
+            
+            if(timestamp){
+                this.dropTriggerQuery(tableName)
+                this.createTriggerQuery(tableName)
+            }
+        })
+        return this.query.trim()
     }
 }
 
-function migrationQuery({tableName, timestamp, columns}){
-    
-    if(timestamp) columns.push({timestamp: true})
-
-    const fieldQuery = columns.map(column => {
-        return new MigrationQueryBuilder({tableName, timestamp, column}).build
-    }).join(', ')
-
-    const query =  `CREATE TABLE IF NOT EXISTS ${tableName} (${fieldQuery}); 
-        DROP TRIGGER IF EXISTS update_${tableName}_updated_at ON ${tableName};
-        CREATE TRIGGER update_${tableName}_updated_at
-        BEFORE UPDATE ON ${tableName}
-        FOR EACH ROW
-        EXECUTE PROCEDURE update_updated_at_column();`
-    
-    return query.replace(/\s+/g, ' ').trim()
-}
-
-async function runMigration({tableName, timestamp, columns}, pool, logging = true){
+async function runMigrations(migrations = [], pool){
     try {
-        // create postgres enum datatype if columns has ENUM data type
-        await createEnumDatatype(pool, tableName, columns, logging)
-
-        //get migration query
-        const query = migrationQuery({tableName, timestamp, columns})
-
-        if(logging) console.log(`Migration Query: ${query}`)
-
-        //run migration
-        await pool.query(query)
-
-        return tableName
-
-    } catch (error) {
         
-        console.error(`Migration table ${tableName} failed`, error)
-        throw error
-    }
-}
-
-async function runMigrations(migrations = [], pool, logging){
-    try {
-
         if(migrations.length === 0) throw new Error('Migration Aborted, Empty migrations data!')
 
-        const successMigrate = []
+        const query = new MigrationQueryBuilder(migrations).build
 
-        pool.query(`
-            CREATE OR REPLACE FUNCTION update_updated_at_column()
-            RETURNS TRIGGER AS $$
-            BEGIN
-            NEW.updated_at = NOW();
-            RETURN NEW;
-            END; $$ LANGUAGE 'plpgsql';
-        `)
-        migrations.forEach(async migration => {
-            successMigrate.push(await runMigration(migration, pool, logging))
-        })
+        console.log(`Migration Query: ${query}`)
 
-        console.log(`Successfully migrate tables ${successMigrate.join(', ')}`)
+        await pool.query(query)
 
     } catch (error) {
-        console.error(`Run Mirations Failed :`, error)
+        console.error(`Run Migrations Failed :`, error)
         throw error
     }
 }
 
-module.exports = {
-    init: (config) => {
-        return {
-            runMigration : ({tableName, timestamp, columns}, pool) => runMigration({tableName, timestamp, columns}, pool, config.logging), 
-            runMigrations : (migrations = [], pool) => runMigrations(migrations, pool, config.logging)
-        }
-    }
-}
+module.exports = { runMigrations }
