@@ -1,6 +1,6 @@
 {
     "name": "dwij-simple-orm",
-    "version": "1.3.5",
+    "version": "1.3.6",
     "description": "SimpleORM - A Lightweight Object-Relational Mapper",
     "main": "src/index.js",
     "scripts": {
