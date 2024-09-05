@@ -77,7 +77,11 @@ function whereBuilder(table, includes, association, requestBody, patternMatching
     for(let key in requestBody){
         const value = requestBody[key]
         if(includes.includes(key)){
-            includedKeys.push(`${table}.${key} ${operationBuilder(value)}`)
+            if(key.toLowerCase().includes('date')){
+                includedKeys.push(`${table}.${key} = $${idx += 1}`)
+            }else{
+                includedKeys.push(`${table}.${key} ${operationBuilder(value)}`)
+            }
         }
     }
 
@@ -88,7 +92,11 @@ function whereBuilder(table, includes, association, requestBody, patternMatching
                 for(let requestKey in requestBody){
                     const value = requestBody[requestKey]
                     if(requestKey == aliasKey){
-                        includedKeys.push(`${assoc.table}.${aliasKey} ${operationBuilder(value)}`)
+                        if(aliasKey.toLowerCase().includes('date')){
+                            includedKeys.push(`${assoc.table}.${aliasKey} = $${idx += 1}`)
+                        }else{
+                            includedKeys.push(`${assoc.table}.${aliasKey} ${operationBuilder(value)}`)
+                        }
                     }
                 }
             }
