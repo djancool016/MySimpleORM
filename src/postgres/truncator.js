@@ -8,20 +8,51 @@ async function getAllTable(pool, schema = 'public'){
     }
 }
 
+async function checkTablesIsEmpty(pool, tables = []){
+    try {
+        // check each table if it's empty
+        let filledTables = []
+
+        for (const table of tables) {
+
+            const result = await pool.query(`SELECT COUNT(*) FROM ${table}`)
+
+            if (result.rows[0].count > 0) filledTables.push(table)
+        }
+        // returning list of filled tables
+        return filledTables
+
+    } catch (error) {
+        console.error('Error checking tables:', error)
+        throw error
+    }
+}
+
 async function runTruncator(pool, tables = []){
     try {
-        let tb
+        // table list
+        const tb = tables.length == 0 ? await getAllTable(pool) : tables
         
-        if(tables.length == 0){
-            tb = await getAllTable(pool)
-        }else {
-            tb = tables
+        // check if table empty
+        const filledTables = await checkTablesIsEmpty(pool, tb)
+        
+        if(filledTables.length > 0){
+            // define query
+            const query = `TRUNCATE TABLE ${filledTables.join(', ')} RESTART IDENTITY CASCADE`
+
+            // start truncate
+            await pool.query(query)
+
+            console.log(`Successfully truncate tables ${filledTables}`)
+
+            return true
+
+        }else{
+            console.log('Truncat aborted, all tables empty!')
+
+            return false
         }
-        const query = `TRUNCATE TABLE ${tb.join(', ')} RESTART IDENTITY CASCADE`
 
-        await pool.query(query)
-
-        console.log(`Successfully truncate tables ${tb}`)
     } catch (error) {
         console.error('Error truncating tables:', error)
         throw error
