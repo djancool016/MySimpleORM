@@ -1,4 +1,4 @@
-async function runSeed({table, seed}, pool, logging = true){
+async function runSeed({table, seed}, pool){
     try {
         // create bulk insert query
         const bulkInsertPromises = seed.map(async obj => {
@@ -11,8 +11,6 @@ async function runSeed({table, seed}, pool, logging = true){
 
             // create insert query
             const query = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`
-
-            if(logging) console.log(`Seeder Query : ${query}`)
 
             // create params
             const params = keys.map( key => obj[key])
@@ -31,14 +29,14 @@ async function runSeed({table, seed}, pool, logging = true){
         throw error
     }
 }
-async function runSeeds(seeds = [], pool, logging = true){
+async function runSeeds(seeds = [], pool){
     try {
         if(!Array.isArray(seeds)) throw new Error('Invalid seeds data type, seeds must be an Array')
         if(seeds.length === 0) throw new Error('Empty Seeds Array')
 
         for(const seed of seeds){
-            await runSeed(seed, pool, logging)
-            await updatePrimaryKeySequence(seed.table, 'id', pool, logging)
+            await runSeed(seed, pool)
+            await updatePrimaryKeySequence(seed.table, 'id', pool)
         }
     } catch (error) {
         console.error('runSeeds Error : ', error)
@@ -46,7 +44,7 @@ async function runSeeds(seeds = [], pool, logging = true){
     }
 }
 
-async function updatePrimaryKeySequence(table, columnName, pool, logging = true){
+async function updatePrimaryKeySequence(table, columnName, pool){
     try {
         const selectSequenceQuery = `SELECT pg_get_serial_sequence('${table}', '${columnName}');`
 
@@ -55,15 +53,8 @@ async function updatePrimaryKeySequence(table, columnName, pool, logging = true)
         const name = sequenceName.rows[0].pg_get_serial_sequence
 
         const updateSequenceQuery = `SELECT setval('${name}', (SELECT COALESCE(MAX(${columnName}), 1) FROM ${table}) + 1);`
-
-        if(logging) {
-            console.log(`Select Sequence Query : ${selectSequenceQuery}`)
-            console.log(`Update Sequence Query : ${updateSequenceQuery}`)
-        }
         
         await pool.query(updateSequenceQuery)
-
-        if(logging) console.log(`Update Sequence ${name} succeed`)
 
     } catch (error) {
 
@@ -73,11 +64,4 @@ async function updatePrimaryKeySequence(table, columnName, pool, logging = true)
     }
 }
 
-module.exports = {
-    init: (config) => {
-        return {
-            runSeed: ({table, seed}, pool) => runSeed({table, seed}, pool, config.logging), 
-            runSeeds: (seeds = [], pool) => runSeeds(seeds, pool, config.logging)
-        }
-    }
-}
+module.exports = {runSeed, runSeeds}
