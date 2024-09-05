@@ -2,7 +2,7 @@
 module.exports = {
     init: (config) => {
 
-        const {runMigrations, runSeed, runSeeds, runTruncator, getAllTables} = require(`./postgres`).init(config)
+        const {runMigrations, runSeeds, runTruncator, getAllTables} = require(`./postgres`).init(config)
         const {databaseManager, poolManager} = require('./database').init(config)
         const Model = require('./model')
         const builder = require('./utils/queryBuilder').init(config)
@@ -17,7 +17,6 @@ module.exports = {
             databaseManager,
             poolManager,
             runMigrations,
-            runSeed,
             runSeeds,
             runTruncator,
             getAllTables,

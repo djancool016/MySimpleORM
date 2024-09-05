@@ -1,26 +1,23 @@
-async function runSeed({table, seed}, pool){
+async function runSeed({table, seed}, pool, logging = true){
     try {
-        // create bulk insert query
-        const bulkInsertPromises = seed.map(async obj => {
+        const seedKey = seed.map(obj = Object.keys)
+        let query = `INSERT INTO ${table} (${Object.keys(seed[0 ]).join(', ')}) VALUES `
+        let param = []
+        let counter = 1
 
-            // extract keys and values from object data
+        // Build the placeholders for each row
+        const value = seed.map(obj => {
             const keys = Object.keys(obj)
+            const placeholders = keys.map(() => `$${counter++}`).join(', ')
+            param.push(...keys.map(key => obj[key]))
+            return `(${placeholders})`
+        });
 
-            // create placeholder for the values
-            const placeholders = keys.map((_, index) => `$${index + 1}`).join(', ')
+        query += value.join(', ')
+        
+        if(logging) console.log(`Seed Query : ${query}`)
 
-            // create insert query
-            const query = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`
-
-            // create params
-            const params = keys.map( key => obj[key])
-            
-            // start seeding
-            await pool.query(query, params)
-        })
-
-        // using Promise.all to reduce potential race condition
-        await Promise.all(bulkInsertPromises)
+        await pool.query(query, param)
 
         return table
 
@@ -29,7 +26,8 @@ async function runSeed({table, seed}, pool){
         throw error
     }
 }
-async function runSeeds(seeds = [], pool){
+
+async function runSeeds(seeds = [], pool, logging){
     try {
         if(!Array.isArray(seeds)) throw new Error('Invalid seeds data type, seeds must be an Array')
         if(seeds.length === 0) throw new Error('Empty Seeds Array')
@@ -37,7 +35,7 @@ async function runSeeds(seeds = [], pool){
         const successSeed = []
 
         for(const seed of seeds){
-            successSeed.push(await runSeed(seed, pool))
+            successSeed.push(await runSeed(seed, pool, logging))
             await updatePrimaryKeySequence(seed.table, 'id', pool)
         }
         console.log(`Successfully seeding tables ${successSeed.join(', ')}`)
@@ -68,4 +66,4 @@ async function updatePrimaryKeySequence(table, columnName, pool){
     }
 }
 
-module.exports = {runSeed, runSeeds}
+module.exports = {runSeeds}

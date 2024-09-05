@@ -2,7 +2,7 @@ module.exports = {
     init: (config) => {
 
         const { runMigrations } = require('./migration')
-        const { runSeed, runSeeds } = require('./seeder')
+        const { runSeeds } = require('./seeder')
         const query = require('./query').init(config)
         const db = require('./db')
         const {runTruncator, getAllTables} = require('./truncator').init(config)
@@ -17,13 +17,14 @@ module.exports = {
             }
         }
 
+        const seeding = (seeds = [], pool) => runSeeds(seeds, pool, config.logging)
+
         return {
             db,
             query,
             getAllTables,
             runMigrations: migrations,
-            runSeed,
-            runSeeds,
+            runSeeds: seeding,
             runTruncator
         }
     }
