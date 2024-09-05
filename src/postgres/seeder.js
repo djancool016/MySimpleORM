@@ -22,7 +22,7 @@ async function runSeed({table, seed}, pool){
         // using Promise.all to reduce potential race condition
         await Promise.all(bulkInsertPromises)
 
-        console.log(`Seeder successfully populate table ${table}`)
+        return table
 
     } catch (error) {
         console.error('runSeed Error : ', error)
@@ -34,10 +34,14 @@ async function runSeeds(seeds = [], pool){
         if(!Array.isArray(seeds)) throw new Error('Invalid seeds data type, seeds must be an Array')
         if(seeds.length === 0) throw new Error('Empty Seeds Array')
 
+        const successSeed = []
+
         for(const seed of seeds){
-            await runSeed(seed, pool)
+            successSeed.push(await runSeed(seed, pool))
             await updatePrimaryKeySequence(seed.table, 'id', pool)
         }
+        console.log(`Successfully seeding tables ${successSeed.join(', ')}`)
+        
     } catch (error) {
         console.error('runSeeds Error : ', error)
         throw error

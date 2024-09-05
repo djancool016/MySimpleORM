@@ -116,9 +116,7 @@ async function runMigration({tableName, timestamp, columns}, pool, logging = tru
         //run migration
         await pool.query(query)
 
-        console.log(`Successfully migrate table ${tableName}`)
-
-        return true
+        return tableName
 
     } catch (error) {
         
@@ -132,6 +130,8 @@ async function runMigrations(migrations = [], pool, logging){
 
         if(migrations.length === 0) throw new Error('Migration Aborted, Empty migrations data!')
 
+        const successMigrate = []
+
         pool.query(`
             CREATE OR REPLACE FUNCTION update_updated_at_column()
             RETURNS TRIGGER AS $$
@@ -141,10 +141,13 @@ async function runMigrations(migrations = [], pool, logging){
             END; $$ LANGUAGE 'plpgsql';
         `)
         migrations.forEach(async migration => {
-            await runMigration(migration, pool, logging)
+            successMigrate.push(await runMigration(migration, pool, logging))
         })
 
+        console.log(`Successfully migrate tables ${successMigrate.join(', ')}`)
+
     } catch (error) {
+        console.error(`Run Mirations Failed :`, error)
         throw error
     }
 }
