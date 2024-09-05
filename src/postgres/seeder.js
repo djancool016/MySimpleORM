@@ -15,7 +15,7 @@ async function runSeed({table, seed}, pool, logging = true){
 
         query += value.join(', ')
         
-        if(logging) console.log(`Seed Query : ${query}`)
+        if(logging) console.log(`Seed Query : ${stringLogger(query)}`)
 
         await pool.query(query, param)
 
@@ -64,6 +64,10 @@ async function updatePrimaryKeySequence(table, columnName, pool){
 
         throw error
     }
+}
+
+function stringLogger(string){
+    console.log(string.length > 100 ? string.slice(0, 100) + '...' : string) 
 }
 
 module.exports = {runSeeds}
