@@ -22,7 +22,7 @@ function modelMapper(model = '', migrations, includesObj = {}) {
                     acc[key] = alias
                     return acc
                 }, {})
-            const association = column.association ? modelMapper(table, migrations, includesObj).association : []
+            const association = column.references ? modelMapper(table, migrations, includesObj).association : []
             return {
                 table,
                 references: `${column.references.table}.${column.references.key}`,
