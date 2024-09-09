@@ -32,7 +32,9 @@ function modelMapper(model = '', migrations, includesObj = {}) {
                 association
             }
         }) : []
-
+        if(!includesObj[migrations[model].tableName] && migrations[model].timestamp){
+            includes.push('created_at', 'updated_at')
+        }
     return {
         table: migrations[model].tableName,
         includes,
