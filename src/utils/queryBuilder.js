@@ -46,6 +46,11 @@ class QueryBuilder {
         this.query += pagingBuilder(this.requestBody) + ' '
         return this
     }
+    get sort(){
+        const {sortBuilder} = this.dbmsBuilder
+        this.query += sortBuilder(this.requestBody) + ' '
+        return this
+    }
     get delete(){
         const {deleteBuilder} = this.dbmsBuilder
         const {table = ''} = this.model
@@ -67,7 +72,7 @@ module.exports = {
                 const builder = (requestBody, patternMatching) => new QueryBuilder(model, requestBody, query, patternMatching)
                 return {
                     create: (requestBody) => builder(requestBody).create.build,
-                    read: (requestBody, patternMatching) => builder(requestBody, patternMatching).select.from.join.where.paging.build,
+                    read: (requestBody, patternMatching) => builder(requestBody, patternMatching).select.from.join.where.sort.paging.build,
                     update: (requestBody) => builder(requestBody).update.build,
                     delete: (requestBody) => builder(requestBody).delete.build
                 }

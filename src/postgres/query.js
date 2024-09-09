@@ -7,6 +7,7 @@ function createBuilder(table, requestBody){
     
     return `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING id`
 }
+
 function selectBuilder(table, includes=[], alias, association = []){
 
     let query = `SELECT `
@@ -38,6 +39,7 @@ function selectBuilder(table, includes=[], alias, association = []){
     }
     return query.slice(0, query.length - 2)
 }
+
 function joinBuilder(association) {
     if (!association || association.length === 0) return ''
 
@@ -52,68 +54,90 @@ function joinBuilder(association) {
         return [joinClause, nestedJoin].filter(Boolean).join(' ')
     }).join(' ')
 }
+
 function whereBuilder(table, includes, association, requestBody, patternMatching = false) {
+    const includedKeys = [];
+    let idx = 0;
 
-    const includedKeys = []
-    let idx = 0
-    const operationBuilder = (value) => {
-        if(Array.isArray(value)){
-            const placeholder = value.map((_, index) => `$${idx += 1}`).join(',')
-            return `IN (${placeholder})`
-        }else if(typeof value === 'string' && /^\d+(,\d+)*$/.test(value)){
-            const placeholder = value.split(',').map((_, index) => `$${idx += 1}`).join(', ')
-            return `IN (${placeholder})`
-        }else if(typeof value === 'string' && value.includes(',')){
-            const placeholder = value.split(',').map((_, index) => `$${idx += 1}`).join(', ')
-            return `IN (${placeholder})`
-        }else if(typeof value === 'string' && value.length > 2 && patternMatching){
-            return `LIKE $${idx += 1}`
-        }else{
-            return `= $${idx += 1}`
-        }
-    }
+    const processKey = (key, value, tableName) => {
+        const placeholder = wherePlaceholderBuilder(key, value, idx, patternMatching);
+        includedKeys.push(`${tableName}.${placeholder}`);
+        idx++; // Increment index after each condition
+    };
 
-    // 'WHERE' query builder for main table
-    for(let key in requestBody){
-        const value = requestBody[key]
-        if(includes.includes(key)){
-            if(key.toLowerCase().includes('date')){
-                includedKeys.push(`${table}.${key} = $${idx += 1}`)
-            }else{
-                includedKeys.push(`${table}.${key} ${operationBuilder(value)}`)
-            }
-        }
-    }
-
-    // 'WHERE' query builder for association table using alias as keys
-    association.forEach(assoc => {
-        if(assoc.alias){
-            for(let aliasKey in assoc.alias){
-                for(let requestKey in requestBody){
-                    const value = requestBody[requestKey]
-                    if(requestKey == aliasKey){
-                        if(aliasKey.toLowerCase().includes('date')){
-                            includedKeys.push(`${assoc.table}.${aliasKey} = $${idx += 1}`)
-                        }else{
-                            includedKeys.push(`${assoc.table}.${aliasKey} ${operationBuilder(value)}`)
-                        }
+    const processAssociation = (association) => {
+        association.forEach(assoc => {
+            if (assoc.alias) {
+                // Process current level of association
+                for (let aliasKey in assoc.alias) {
+                    if (requestBody[aliasKey]) {
+                        processKey(aliasKey, requestBody[aliasKey], assoc.table);
                     }
                 }
+
+                // Process nested associations recursively
+                if (assoc.association?.length > 0) {
+                    processAssociation(assoc.association);
+                }
             }
+        });
+    };
+
+    // 'WHERE' query builder for the main table
+    for (let key in requestBody) {
+        const baseKey = key.toLowerCase().replace(/_(start|end)$/, '')
+        if (includes.includes(key) || (includes.includes(baseKey) && (key.toLowerCase().includes('_start') || (key.toLowerCase().includes('_end'))))) {
+            processKey(key, requestBody[key], table);
         }
-    })
-    if(includedKeys.length > 0) return `WHERE ${includedKeys.join(' AND ')}`
-    return ``
+    }
+
+    // 'WHERE' query builder for association tables using alias as keys
+    processAssociation(association);
+
+    return includedKeys.length > 0 ? `WHERE ${includedKeys.join(' AND ')}` : 'WHERE id = 0';
 }
+
+function wherePlaceholderBuilder(key, value, idx = 0, patternMatching = false) {
+    if (key.toLowerCase().includes('_start')) {
+        return `${key.replace('_start', '')} >= $${++idx}`
+
+    } else if (key.toLowerCase().includes('_end')) {
+        return `${key.replace('_end', '')} <= $${++idx}`
+
+    } else if (key.toLowerCase().includes('date')) {
+        return `${key} = $${++idx}`
+
+    } else if (Array.isArray(value)) {
+        return `${key} IN (${value.map(() => `$${++idx}`).join(', ')})`
+
+    } else if (typeof value === 'string' && /^\d+(,\d+)*$/.test(value)) {
+        return `${key} IN (${value.split(',').map(() => `$${++idx}`).join(', ')})`
+
+    } else if (typeof value === 'string' && value.includes(',')) {
+        return `${key} IN (${value.split(',').map(() => `$${++idx}`).join(', ')})`
+
+    } else if (typeof value === 'string' && value.length > 2 && patternMatching) {
+        return `${key} LIKE $${++idx}`
+
+    } else {
+        return `${key} = $${++idx}`
+    }
+}
+
 function pagingBuilder(requestBody){
     
     const page = requestBody?.page || 1
-    const pageSize = requestBody?.pageSize || 10
+    const pageSize = requestBody?.page_size || 10
 
     const limit = pageSize
     const offset = (page - 1) * (pageSize)
     
     return `LIMIT ${limit} OFFSET ${offset}`
+}
+
+function sortBuilder(requestBody){
+    const { sort_by = 'id', sort_order = 'asc' } = requestBody
+    return `ORDER BY ${sort_by} ${sort_order.toUpperCase()}`
 }
 
 function updateBuilder(table, requestBody){
@@ -175,7 +199,7 @@ module.exports = {
             runQuery: (query, params, pool) => runQuery(query, params, pool, config.logging),
             createBuilder, selectBuilder, joinBuilder, 
             whereBuilder, pagingBuilder, updateBuilder, 
-            deleteBuilder, paramsBuilder
+            deleteBuilder, paramsBuilder, sortBuilder
         }
     }
 }
