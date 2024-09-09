@@ -67,7 +67,7 @@ async function updatePrimaryKeySequence(table, columnName, pool){
 }
 
 function stringLogger(string){
-    console.log(string.length > 100 ? string.slice(0, 100) + '...' : string) 
+    return string.length > 100 ? string.slice(0, 100) + '...' : string
 }
 
 module.exports = {runSeeds}
