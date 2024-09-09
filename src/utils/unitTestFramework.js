@@ -7,11 +7,12 @@ class UnitTestFramework {
      * @param {Object} testObj - Object containing test cases
      * @param {Object} testModule - Instance of the testModule class
      */
-    constructor(testObj = {}, testModule) {
+    constructor(testObj = {}, testModule, logResult = false) {
         this.testObj = testObj // Store test cases
         this.testModule = testModule // Store the test module instance
         this.beforeAll = async () => {}
         this.afterAll = async () => {}
+        this.logResult = logResult
     }
     
     /**
@@ -41,6 +42,7 @@ class UnitTestFramework {
                             // Otherwise, use input as a single parameter
                             result = async () => this.testModule[method](newInput)
                         }
+                        if(this.logResult) console.log(await result())
                         // Compare test result with expected output
                         this.resultBuilder(await result(), output)
                     } catch (error) {
@@ -68,7 +70,10 @@ class UnitTestFramework {
             case 'string':
                 // Validate data type and value for strings
                 expect(typeof result).toBe('string')
-                if(output != 'random string') expect(result).toEqual(output)
+                if(output.includes('contain:')) {
+                    const partOfText = output.split(':')[1].trim()
+                    expect(result).toContain(partOfText)
+                } else if(output != 'random string') expect(result).toEqual(output)
                 break
             case 'boolean':
                 // Validate data type and value for booleans
