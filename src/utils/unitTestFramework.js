@@ -46,7 +46,7 @@ class UnitTestFramework {
                         // Compare test result with expected output
                         this.resultBuilder(await result(), output)
                     } catch (error) {
-                        //if(logging) console.error(error.stack || error)
+                        console.error(error.stack || error)
                         // Handle error and compare with expected output if any
                         expect(error).toEqual(expect.objectContaining(output))
                     }

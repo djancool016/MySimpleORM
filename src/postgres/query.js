@@ -56,45 +56,46 @@ function joinBuilder(association) {
 }
 
 function whereBuilder(table, includes, association, requestBody, patternMatching = false) {
-    const includedKeys = [];
-    let idx = 0;
+    const includedKeys = []
+    let idx = 0
 
-    const processKey = (key, value, tableName) => {
-        const placeholder = wherePlaceholderBuilder(key, value, idx, patternMatching);
-        includedKeys.push(`${tableName}.${placeholder}`);
-        idx++; // Increment index after each condition
-    };
+    const processKey = (key, requestBody, tableName, includes) => {
+        const baseKey = key.toLowerCase().replace(/_(start|end)$/, '')
+
+        if (requestBody[key] && 
+            (includes.includes(key) || 
+            (includes.includes(baseKey) && (key.toLowerCase().includes('_start') || (key.toLowerCase().includes('_end')))))) {
+            
+            const placeholder = wherePlaceholderBuilder(key, requestBody[key], idx, patternMatching)
+            includedKeys.push(`${tableName}.${placeholder}`)
+            idx++ // Increment index after each condition
+        } 
+    }
 
     const processAssociation = (association) => {
         association.forEach(assoc => {
-            if (assoc.alias) {
-                // Process current level of association
-                for (let aliasKey in assoc.alias) {
-                    if (requestBody[aliasKey]) {
-                        processKey(aliasKey, requestBody[aliasKey], assoc.table);
-                    }
+            Object.keys(assoc.alias).forEach(key => {
+                if(requestBody[assoc.alias[key]]) {
+                    const tempBody = {...requestBody}
+                    tempBody[key] = tempBody[assoc.alias[key]]
+                    processKey(key, tempBody, assoc.table, assoc.includes)
                 }
-
-                // Process nested associations recursively
-                if (assoc.association?.length > 0) {
-                    processAssociation(assoc.association);
-                }
+            })
+            // Process nested associations recursively
+            if (assoc.association?.length > 0) {
+                processAssociation(assoc.association)
             }
-        });
-    };
+        })
+    }
 
     // 'WHERE' query builder for the main table
     for (let key in requestBody) {
-        const baseKey = key.toLowerCase().replace(/_(start|end)$/, '')
-        if (includes.includes(key) || (includes.includes(baseKey) && (key.toLowerCase().includes('_start') || (key.toLowerCase().includes('_end'))))) {
-            processKey(key, requestBody[key], table);
-        }
+        processKey(key, requestBody, table, includes)
     }
 
     // 'WHERE' query builder for association tables using alias as keys
-    processAssociation(association);
-
-    return includedKeys.length > 0 ? `WHERE ${includedKeys.join(' AND ')}` : 'WHERE id = 0';
+    processAssociation(association)
+    return includedKeys.length > 0 ? `WHERE ${includedKeys.join(' AND ')}` : 'WHERE id = 0'
 }
 
 function wherePlaceholderBuilder(key, value, idx = 0, patternMatching = false) {

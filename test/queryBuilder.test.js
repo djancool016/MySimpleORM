@@ -144,8 +144,23 @@ const testCases = {
         },
         {
             input: {id_start: 1, id_end: 99999, page: 2, page_size: 100},
-            output: 'contain WHERE entry.id >= $1 AND entry.id <= $2 ORDER BY id ASC LIMIT 100 OFFSET 100',
+            output: 'contain: WHERE entry.id >= $1 AND entry.id <= $2 ORDER BY id ASC LIMIT 100 OFFSET 100',
             description: 'Read By Range Rumbers Query'
+        },
+        {
+            input: {register: 'Register Description'},
+            output: 'contain: WHERE register.description = $1',
+            description: 'Read By foreign table register'
+        },
+        {
+            input: {coa: 'Coa Description'},
+            output: 'contain: WHERE coa.description = $1',
+            description: 'Read By foreign table coa'
+        },
+        {
+            input: {account_id: 1},
+            output: 'contain: WHERE account.id = $1',
+            description: 'Read By nested foreign table account'
         }
     ]
 }
@@ -153,10 +168,10 @@ const testCases = {
 const includesObj = {
     register: ['description:register'],
     coa: ['description:coa'],
-    account: ['description:account']
+    account: ['description:account', 'id:account_id']
 }
 const model = modelMapper('entry', migrations, includesObj)
-console.log(model)
+console.log(JSON.stringify(model,null,4))
 const testModule = queryBuilder(model)
 
 const test = new UnitTestFramework(testCases, testModule, true)
