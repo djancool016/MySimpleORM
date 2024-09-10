@@ -95,7 +95,7 @@ function whereBuilder(table, includes, association, requestBody, patternMatching
 
     // 'WHERE' query builder for association tables using alias as keys
     processAssociation(association)
-    return includedKeys.length > 0 ? `WHERE ${includedKeys.join(' AND ')}` : 'WHERE id = 0'
+    return includedKeys.length > 0 ? `WHERE ${includedKeys.join(' AND ')}` : ''
 }
 
 function wherePlaceholderBuilder(key, value, idx = 0, patternMatching = false) {
