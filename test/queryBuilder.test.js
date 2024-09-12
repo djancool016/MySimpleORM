@@ -65,7 +65,7 @@ const testCases = {
         },
         {
             input: {sum:['amount'], coa_code:[1010,2010,3010], group_by: ['coa_code','coa', 'dc'], date_start: "2024-10-01", date_end: "2024-10-30"},
-            output: 'contain: SELECT SUM(transaction.amount) AS total_transaction_amount, SUM(entry.coa_code) AS total_entry_coa_code',
+            output: 'contain: SELECT SUM(transaction.amount) AS total_transaction_amount, entry.coa_code AS coa_code, entry.dc AS dc, coa.description AS coa',
             description: 'Create SUM Query'
         }
     ],
