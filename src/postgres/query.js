@@ -34,29 +34,62 @@ function selectBuilder(table, includes=[], alias, association = []){
     return query.slice(0, query.length - 2)
 }
 
-function sumBuilder(table, includes, association, sum = []){
+function sumBuilder(table, includes, alias, association, sumCol = [], groupCol = []){
     
     let query = `SELECT `
 
-    const selectQuery = (table, includes, association) => {
+    const selectQuery = (table, includes, alias, association) => {
     
         includes.forEach(column => {
-            if(sum.includes(column)){
+            if(groupCol.includes(alias[column])){
+                query += `${table}.${column} AS ${alias[column]}, `
+
+            }else if(groupCol.includes(column)){
+                query += `${table}.${column}, `
+            }
+            
+            if(sumCol.includes(column) || sumCol.includes(alias[column]) ){
                 query += `SUM(${table}.${column}) AS total_${table}_${column}, `
             }
         })
 
         if(association && Array.isArray(association) && association.length > 0){
             association.forEach(assoc => {
-                selectQuery(assoc.table, assoc.includes, assoc.association)
+                selectQuery(assoc.table, assoc.includes, assoc.alias, assoc.association)
             })
         }
     }
 
-    selectQuery(table, includes, association)
+    selectQuery(table, includes, alias, association)
 
     return query.slice(0, query.length - 2)
 }
+
+function groupBuilder(table, includes, alias, association, groupCol = []){
+    
+    let query = `GROUP BY `
+
+    let groupQuery = (table, includes, alias, association) => {
+
+        includes.forEach(column => {
+            if(groupCol.includes(column) || groupCol.includes(alias[column])){
+                query += `${table}.${column}, `
+            }
+        })
+
+        if(association && Array.isArray(association) && association.length > 0){
+            association.forEach(assoc => {
+                groupQuery(assoc.table, assoc.includes, assoc.alias, assoc.association)
+            })
+        }
+    }
+
+    groupQuery(table, includes, alias, association)
+
+    if(groupCol.length > 0 ) return query.slice(0, query.length - 2)
+    return ''
+}
+
 
 function joinBuilder(association) {
     if (!association || association.length === 0) return ''
@@ -212,6 +245,7 @@ async function runQuery(query, params, pool, logging = true){
 }
 
 
+
 module.exports = {
     init: (config) => {
         return { 
@@ -219,7 +253,7 @@ module.exports = {
             createBuilder, selectBuilder, joinBuilder, 
             whereBuilder, pagingBuilder, updateBuilder, 
             deleteBuilder, paramsBuilder, sortBuilder,
-            sumBuilder
+            sumBuilder, groupBuilder
         }
     }
 }

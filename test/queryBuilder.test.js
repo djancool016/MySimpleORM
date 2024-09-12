@@ -64,7 +64,7 @@ const testCases = {
             description: 'Create SUM Query'
         },
         {
-            input: {sum:['amount', 'coa_code'], date_start: "2024-10-01", date_end: "2024-10-30"},
+            input: {sum:['amount'], coa_code:[1010,2010,3010], group_by: ['coa_code','coa', 'dc'], date_start: "2024-10-01", date_end: "2024-10-30"},
             output: 'contain: SELECT SUM(transaction.amount) AS total_transaction_amount, SUM(entry.coa_code) AS total_entry_coa_code',
             description: 'Create SUM Query'
         }
@@ -74,7 +74,7 @@ const testCases = {
 const includesObj = {
     register: ['description:register'],
     entry: ['id:entry_id', 'coa_code:coa_code', 'dc:dc'],
-    coa: ['code: coa_code'],
+    coa: ['description:coa'],
     account: ['id:account_id']
 }
 const model = modelMapper('transaction', migrations, includesObj)

@@ -53,7 +53,7 @@ class SelectQueryBuilder extends QueryBuilder {
     }
     get select(){
         const {selectBuilder} = this.dbmsBuilder
-        const {table = '', includes = [], alias = [], association = []} = this.model
+        const {table = '', includes = [], alias = {}, association = []} = this.model
         this.query += selectBuilder(table, includes, alias, association) + ' '
         return this
     }
@@ -84,6 +84,13 @@ class SelectQueryBuilder extends QueryBuilder {
         this.query += sortBuilder(this.requestBody) + ' '
         return this
     }
+    get group(){
+        const {groupBuilder} = this.dbmsBuilder
+        const {table = '', includes = [], alias = {}, association = []} = this.model
+        const {group_by = []} = this.requestBody
+        this.query += groupBuilder(table, includes, alias, association, group_by) + ' '
+        return this
+    }
 }
 
 class SumQueryBuilder extends SelectQueryBuilder {
@@ -92,9 +99,9 @@ class SumQueryBuilder extends SelectQueryBuilder {
     }
     get select(){
         const {sumBuilder} = this.dbmsBuilder
-        const {table = '', includes = [], association = []} = this.model
-        const {sum} = this.requestBody
-        this.query += sumBuilder(table, includes, association, sum) + ' '
+        const {table = '', includes = [], alias = {}, association = []} = this.model
+        const {sum, group_by} = this.requestBody
+        this.query += sumBuilder(table, includes, alias, association, sum, group_by) + ' '
         return this
     }
     get where(){
@@ -115,8 +122,8 @@ module.exports = {
             queryBuilder: (model) => {
                 return {
                     create: (requestBody) => new CreateQueryBuilder(model, requestBody, dbmsBuilder).create.build,
-                    read: (requestBody, patternMatching) => new SelectQueryBuilder(model, requestBody, dbmsBuilder, patternMatching).select.from.join.where.sort.paging.build,
-                    sum: (requestBody) => new SumQueryBuilder(model, requestBody, dbmsBuilder).select.from.join.where.build,
+                    read: (requestBody, patternMatching) => new SelectQueryBuilder(model, requestBody, dbmsBuilder, patternMatching).select.from.join.where.sort.paging.group.build,
+                    sum: (requestBody) => new SumQueryBuilder(model, requestBody, dbmsBuilder).select.from.join.where.group.build,
                     update: (requestBody) => new UpdateQueryBuilder(model, requestBody, dbmsBuilder).update.build,
                     delete: (requestBody) => new DeleteQueryBuilder(model, requestBody, dbmsBuilder).delete.build
                 }
