@@ -29,14 +29,32 @@ function selectBuilder(table, includes=[], alias, association = []){
         }
     }
 
-    selectQuery(table, includes, alias)
+    selectQuery(table, includes, alias, association)
+    
+    return query.slice(0, query.length - 2)
+}
 
-    if(association && Array.isArray(association) && association.length > 0){
-        association.forEach( assoc => {
-            const {table, includes, alias} = assoc
-            selectQuery(table, includes, alias, assoc.association)
+function sumBuilder(table, includes, association, sum = []){
+    
+    let query = `SELECT `
+
+    const selectQuery = (table, includes, association) => {
+    
+        includes.forEach(column => {
+            if(sum.includes(column)){
+                query += `SUM(${table}.${column}) AS total_${table}_${column}, `
+            }
         })
+
+        if(association && Array.isArray(association) && association.length > 0){
+            association.forEach(assoc => {
+                selectQuery(assoc.table, assoc.includes, assoc.association)
+            })
+        }
     }
+
+    selectQuery(table, includes, association)
+
     return query.slice(0, query.length - 2)
 }
 
@@ -118,7 +136,7 @@ function wherePlaceholderBuilder(key, value, idx = 0, patternMatching = false) {
         return `${key} IN (${value.split(',').map(() => `$${++idx}`).join(', ')})`
 
     } else if (typeof value === 'string' && value.length > 2 && patternMatching) {
-        return `${key} LIKE $${++idx}`
+        return `${key} ILIKE $${++idx}`
 
     } else {
         return `${key} = $${++idx}`
@@ -200,7 +218,8 @@ module.exports = {
             runQuery: (query, params, pool) => runQuery(query, params, pool, config.logging),
             createBuilder, selectBuilder, joinBuilder, 
             whereBuilder, pagingBuilder, updateBuilder, 
-            deleteBuilder, paramsBuilder, sortBuilder
+            deleteBuilder, paramsBuilder, sortBuilder,
+            sumBuilder
         }
     }
 }

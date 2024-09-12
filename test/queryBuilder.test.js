@@ -56,7 +56,19 @@ const testCases = {
             output: 'contain: WHERE entry.coa_code = $1',
             description: 'Read By foreign table register'
         }
-    ]
+    ],
+    sum: [
+        {
+            input: {sum:['amount']},
+            output: 'contain: SELECT SUM(transaction.amount) AS total_transaction_amount',
+            description: 'Create SUM Query'
+        },
+        {
+            input: {sum:['amount', 'coa_code'], date_start: "2024-10-01", date_end: "2024-10-30"},
+            output: 'contain: SELECT SUM(transaction.amount) AS total_transaction_amount, SUM(entry.coa_code) AS total_entry_coa_code',
+            description: 'Create SUM Query'
+        }
+    ],
 }
 
 const includesObj = {

@@ -6,17 +6,50 @@ class QueryBuilder {
         this.dbmsBuilder = dbmsBuilder
         this.patternMatching = patternMatching
     }
+    get build(){
+        return this.query.trim()
+    }
+}
+
+class CreateQueryBuilder extends QueryBuilder {
+    constructor(model, requestBody, dbmsBuilder){
+        super(model, requestBody, dbmsBuilder)
+    }
     get create(){
         const {createBuilder} = this.dbmsBuilder
         const {table = ''} = this.model
         this.query += createBuilder(table, this.requestBody) + ' '
         return this
     }
+}
+
+class UpdateQueryBuilder extends QueryBuilder {
+    constructor(model, requestBody, dbmsBuilder){
+        super(model, requestBody, dbmsBuilder)
+    }
     get update(){
         const {updateBuilder} = this.dbmsBuilder
         const {table = ''} = this.model
         this.query += updateBuilder(table, this.requestBody) 
         return this
+    }
+}
+
+class DeleteQueryBuilder extends QueryBuilder {
+    constructor(model, requestBody, dbmsBuilder){
+        super(model, requestBody, dbmsBuilder)
+    }
+    get delete(){
+        const {deleteBuilder} = this.dbmsBuilder
+        const {table = ''} = this.model
+        this.query += deleteBuilder(table)
+        return this
+    }
+}
+
+class SelectQueryBuilder extends QueryBuilder {
+    constructor(model, requestBody, dbmsBuilder, patternMatching){
+        super(model, requestBody, dbmsBuilder, patternMatching)
     }
     get select(){
         const {selectBuilder} = this.dbmsBuilder
@@ -51,34 +84,45 @@ class QueryBuilder {
         this.query += sortBuilder(this.requestBody) + ' '
         return this
     }
-    get delete(){
-        const {deleteBuilder} = this.dbmsBuilder
-        const {table = ''} = this.model
-        this.query += deleteBuilder(table)
+}
+
+class SumQueryBuilder extends SelectQueryBuilder {
+    constructor(model, requestBody, dbmsBuilder){
+        super(model, requestBody, dbmsBuilder)
+    }
+    get select(){
+        const {sumBuilder} = this.dbmsBuilder
+        const {table = '', includes = [], association = []} = this.model
+        const {sum} = this.requestBody
+        this.query += sumBuilder(table, includes, association, sum) + ' '
         return this
     }
-    get build(){
-        return this.query.trim()
+    get where(){
+        const {whereBuilder} = this.dbmsBuilder
+        const {table = '', includes = [], association = []} = this.model
+        const {sum, ...requestBody} = this.requestBody
+        this.query += whereBuilder(table, includes, association, requestBody) + ' '
+        return this
     }
 }
 
 module.exports = {
     init: (config) => {
         
-        const {query} = require(`../${config.db_system}`).init(config)
+        const {query: dbmsBuilder} = require(`../${config.db_system}`).init(config)
 
         return {
             queryBuilder: (model) => {
-                const builder = (requestBody, patternMatching) => new QueryBuilder(model, requestBody, query, patternMatching)
                 return {
-                    create: (requestBody) => builder(requestBody).create.build,
-                    read: (requestBody, patternMatching) => builder(requestBody, patternMatching).select.from.join.where.sort.paging.build,
-                    update: (requestBody) => builder(requestBody).update.build,
-                    delete: (requestBody) => builder(requestBody).delete.build
+                    create: (requestBody) => new CreateQueryBuilder(model, requestBody, dbmsBuilder).create.build,
+                    read: (requestBody, patternMatching) => new SelectQueryBuilder(model, requestBody, dbmsBuilder, patternMatching).select.from.join.where.sort.paging.build,
+                    sum: (requestBody) => new SumQueryBuilder(model, requestBody, dbmsBuilder).select.from.join.where.build,
+                    update: (requestBody) => new UpdateQueryBuilder(model, requestBody, dbmsBuilder).update.build,
+                    delete: (requestBody) => new DeleteQueryBuilder(model, requestBody, dbmsBuilder).delete.build
                 }
             },
-            paramsBuilder: query.paramsBuilder,
-            runQuery: query.runQuery
+            paramsBuilder: dbmsBuilder.paramsBuilder,
+            runQuery: dbmsBuilder.runQuery
         }
     }
 }

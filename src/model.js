@@ -34,7 +34,10 @@ class Model {
         if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY
         return this.#runQuery('update', requestBody)
     }
-
+    async sum(requestBody) {
+        if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY
+        return this.#runQuery('sum', requestBody)
+    }
     async delete(id) {
         if(!id || isNaN(Number(id))) throw errorCode.ER_INVALID_BODY
         return this.#runQuery('delete', {id})
@@ -51,6 +54,9 @@ class Model {
             if(operation == 'update'){
                 const {id, ...rest} = requestBody
                 paramsBody = {...rest, id}
+            }else if(operation == 'sum'){
+                const {sum, ...rest} = requestBody
+                paramsBody = {...rest}
             }else{
                 paramsBody = requestBody
             }

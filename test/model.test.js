@@ -105,6 +105,13 @@ const testCases = {
             description: 'Invalid input should throwing error code ER_INVALID_BODY'
         }
     ],
+    sum: [
+        {
+            input: {sum:['id']},
+            output: {data: [{total_users_id: "7658"}]},
+            description: 'Success should return truthly'
+        }
+    ],
     delete: [
         {
             input: 7654,
