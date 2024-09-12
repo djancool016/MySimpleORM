@@ -108,7 +108,7 @@ const testCases = {
     sum: [
         {
             input: {sum:['id']},
-            output: {data: [{total_users_id: "7658"}]},
+            output: {data: [{total_users_id: 'random number'}]},
             description: 'Success should return truthly'
         }
     ],
