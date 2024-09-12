@@ -42,7 +42,7 @@ function sumBuilder(table, includes, association, sum = []){
     
         includes.forEach(column => {
             if(sum.includes(column)){
-                query += `SUM(${table}.${column})::INTEGER AS total_${table}_${column}, `
+                query += `SUM(${table}.${column}) AS total_${table}_${column}, `
             }
         })
 
