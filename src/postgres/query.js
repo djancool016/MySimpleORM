@@ -226,7 +226,7 @@ function paramsBuilder(requestBody, patternMatching = false, allowedArrayValue =
             }
         })
 
-    return params
+    return params.flat()
 }
 async function runQuery(query, params, pool, logging = true){
     try {
