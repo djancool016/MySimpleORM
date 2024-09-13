@@ -1,38 +1,32 @@
 const {errorCode, errorHandler} = require('./utils/customError')
 
 class Model {
-    constructor(pool, model, builder) {
-        const{queryBuilder, paramsBuilder, runQuery} = builder
+    constructor(pool, model, {queryBuilder, runQuery}) {
         this.pool = pool
         this.runQuery = runQuery
-        this.queryBuilder = queryBuilder(model),
-        this.paramsBuilder = paramsBuilder
-        this.runQuery = runQuery
+        this.queryBuilder = queryBuilder(model)
     }
-
     async create(requestBody) {
         if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY
         return this.#runQuery('create', requestBody)
     }
-
     async findByPk(id) {
         if(!id || isNaN(Number(id))) throw errorCode.ER_INVALID_BODY
         return this.#runQuery('read', {id})
     }
-
     async findAll(requestBody) {
-        if (typeof requestBody !== 'object' || requestBody === undefined) {
-            throw errorCode.ER_INVALID_BODY
-        }
-        return this.#runQuery('read', requestBody || {})
+        if (typeof requestBody !== 'object' || requestBody === undefined) throw errorCode.ER_INVALID_BODY
+        return this.#runQuery('read', requestBody)
     }
-    async findByKeys(requestBody, patternMatching = true) {
+    async findByKeys(requestBody, strict = false) {
         if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY
-        return this.#runQuery('read', requestBody, [patternMatching, true])
+        requestBody['strict'] = strict
+        return this.#runQuery('read', requestBody, strict)
     }
     async update(requestBody) {
         if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY
-        return this.#runQuery('update', requestBody)
+        const{id, ...rest} = requestBody
+        return this.#runQuery('update', {...rest, id})
     }
     async sum(requestBody) {
         if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY
@@ -42,44 +36,27 @@ class Model {
         if(!id || isNaN(Number(id))) throw errorCode.ER_INVALID_BODY
         return this.#runQuery('delete', {id})
     }
-
-    async #runQuery(operation, requestBody, otherParams = []) {
+    async #runQuery(operation, requestBody) {
         try {
-            if(!operation) throw errorCode.ER_INVALID_METHOD
-            
-            const query = this.queryBuilder[operation](requestBody, ...otherParams)
-
-            let paramsBody = requestBody
-            
-            if(operation == 'update'){
-                const {id, ...rest} = requestBody
-                paramsBody = {...rest, id}
-            }else if(operation == 'sum'){
-                const {sum, ...rest} = requestBody
-                paramsBody = {...rest}
-            }else{
-                paramsBody = requestBody
-            }
-
-            const params = this.paramsBuilder(paramsBody, ...otherParams)
-
-            if(!query) throw errorCode.ER_QUERY_ERROR
-
+            // build query       
+            const query = this.queryBuilder[operation](requestBody)
+            // build params
+            const params = this.queryBuilder.params(requestBody)
+            // run query
             const result = await this.runQuery(query, params, this.pool)
     
-            if(Array.isArray(result) && result.length == 0 || result.affectedRows == 0){
+            if(!result || result.length === 0){
                 throw errorCode.ER_NOT_FOUND
             }
             return resultHandler({ data: result })
     
         } catch (error) {
+
             if(errorCode[error.code]) throw errorHandler(errorCode[error.code])
-    
+
             throw errorHandler(error)
         }
     }
-    
-    
 }
 
 function resultHandler({ data, message = '', code = '' }) {

@@ -1,10 +1,9 @@
 class QueryBuilder {
-    constructor(model, requestBody, dbmsBuilder, patternMatching){
+    constructor(model, requestBody, dbmsBuilder){
         this.query = ''
         this.model = model
         this.requestBody = requestBody
         this.dbmsBuilder = dbmsBuilder
-        this.patternMatching = patternMatching
     }
     get build(){
         return this.query.trim()
@@ -30,7 +29,8 @@ class UpdateQueryBuilder extends QueryBuilder {
     get update(){
         const {updateBuilder} = this.dbmsBuilder
         const {table = ''} = this.model
-        this.query += updateBuilder(table, this.requestBody) 
+        const {id, ...rest} = this.requestBody
+        this.query += updateBuilder(table, {...rest, id}) 
         return this
     }
 }
@@ -48,8 +48,8 @@ class DeleteQueryBuilder extends QueryBuilder {
 }
 
 class SelectQueryBuilder extends QueryBuilder {
-    constructor(model, requestBody, dbmsBuilder, patternMatching){
-        super(model, requestBody, dbmsBuilder, patternMatching)
+    constructor(model, requestBody, dbmsBuilder){
+        super(model, requestBody, dbmsBuilder)
     }
     get select(){
         const {selectBuilder} = this.dbmsBuilder
@@ -71,7 +71,8 @@ class SelectQueryBuilder extends QueryBuilder {
     get where(){
         const {whereBuilder} = this.dbmsBuilder
         const {table = '', includes = [], association = []} = this.model
-        this.query += whereBuilder(table, includes, association, this.requestBody, this.patternMatching) + ' '
+        const {strict, ...requestBody} = this.requestBody
+        this.query += whereBuilder(table, includes, association, requestBody, strict) + ' '
         return this
     }
     get paging(){
@@ -90,6 +91,9 @@ class SelectQueryBuilder extends QueryBuilder {
         const {group_by = []} = this.requestBody
         this.query += groupBuilder(table, includes, alias, association, group_by) + ' '
         return this
+    }
+    get build(){
+        return this.select.from.join.where.sort.paging.group.query.trim()
     }
 }
 
@@ -111,6 +115,21 @@ class SumQueryBuilder extends SelectQueryBuilder {
         this.query += whereBuilder(table, includes, association, requestBody) + ' '
         return this
     }
+    get build(){
+        return this.select.from.join.where.group.query.trim()
+    }
+}
+
+class ParamsBuilder extends QueryBuilder {
+    constructor(model, requestBody, dbmsBuilder){
+        super(model, requestBody, dbmsBuilder)
+    }
+    get build(){
+        const {parametersBuilder} = this.dbmsBuilder
+        const {includes = [], alias = {}, association = []} = this.model
+        const {strict, ...requestBody} = this.requestBody
+        return parametersBuilder(includes, alias, association, requestBody, strict)
+    }
 }
 
 module.exports = {
@@ -122,13 +141,13 @@ module.exports = {
             queryBuilder: (model) => {
                 return {
                     create: (requestBody) => new CreateQueryBuilder(model, requestBody, dbmsBuilder).create.build,
-                    read: (requestBody, patternMatching) => new SelectQueryBuilder(model, requestBody, dbmsBuilder, patternMatching).select.from.join.where.sort.paging.group.build,
-                    sum: (requestBody) => new SumQueryBuilder(model, requestBody, dbmsBuilder).select.from.join.where.group.build,
+                    read: (requestBody) => new SelectQueryBuilder(model, requestBody, dbmsBuilder).build,
+                    sum: (requestBody) => new SumQueryBuilder(model, requestBody, dbmsBuilder).build,
                     update: (requestBody) => new UpdateQueryBuilder(model, requestBody, dbmsBuilder).update.build,
-                    delete: (requestBody) => new DeleteQueryBuilder(model, requestBody, dbmsBuilder).delete.build
+                    delete: (requestBody) => new DeleteQueryBuilder(model, requestBody, dbmsBuilder).delete.build,
+                    params: (requestBody) => new ParamsBuilder(model, requestBody, dbmsBuilder).build
                 }
             },
-            paramsBuilder: dbmsBuilder.paramsBuilder,
             runQuery: dbmsBuilder.runQuery
         }
     }

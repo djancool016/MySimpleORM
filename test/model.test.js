@@ -82,7 +82,7 @@ const testCases = {
             output: {data:[{id: 7654}]},
             description: 'Success should returning array of objects'
         },{
-            input: {id:1, username: 'adm', other: 'unknown key'},
+            input: {id:1, username: 'admX', other: 'unknown key'},
             output: {code: 'ER_NOT_FOUND'},
             description: 'Empty result should throwing error code ER_NOT_FOUND'
         },{

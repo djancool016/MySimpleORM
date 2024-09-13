@@ -1,3 +1,5 @@
+const {isDateOrDateTime} = require('../utils/helperUtils')
+
 function createBuilder(table, requestBody){
     // extract keys and values from object data
     const keys = Object.keys(requestBody)
@@ -106,7 +108,7 @@ function joinBuilder(association) {
     }).join(' ')
 }
 
-function whereBuilder(table, includes, association, requestBody, patternMatching = false) {
+function whereBuilder(table, includes, association, requestBody, strict = false) {
     const includedKeys = []
     let idx = 0
 
@@ -117,7 +119,7 @@ function whereBuilder(table, includes, association, requestBody, patternMatching
             (includes.includes(key) || 
             (includes.includes(baseKey) && (key.toLowerCase().includes('_start') || (key.toLowerCase().includes('_end')))))) {
             
-            const placeholder = wherePlaceholderBuilder(key, requestBody[key], idx, patternMatching)
+            const placeholder = wherePlaceholderBuilder(key, requestBody[key], idx, strict)
             includedKeys.push(`${tableName}.${placeholder}`)
             idx++ // Increment index after each condition
         } 
@@ -149,14 +151,14 @@ function whereBuilder(table, includes, association, requestBody, patternMatching
     return includedKeys.length > 0 ? `WHERE ${includedKeys.join(' AND ')}` : ''
 }
 
-function wherePlaceholderBuilder(key, value, idx = 0, patternMatching = false) {
+function wherePlaceholderBuilder(key, value, idx = 0, strict = false) {
     if (key.toLowerCase().includes('_start')) {
         return `${key.replace('_start', '')} >= $${++idx}`
 
     } else if (key.toLowerCase().includes('_end')) {
         return `${key.replace('_end', '')} <= $${++idx}`
 
-    } else if (key.toLowerCase().includes('date')) {
+    } else if (isDateOrDateTime(value)) {
         return `${key} = $${++idx}`
 
     } else if (Array.isArray(value)) {
@@ -168,7 +170,7 @@ function wherePlaceholderBuilder(key, value, idx = 0, patternMatching = false) {
     } else if (typeof value === 'string' && value.includes(',')) {
         return `${key} IN (${value.split(',').map(() => `$${++idx}`).join(', ')})`
 
-    } else if (typeof value === 'string' && value.length > 2 && patternMatching) {
+    } else if (typeof value === 'string' && value.length > 2 && !strict) {
         return `${key} ILIKE $${++idx}`
 
     } else {
@@ -208,29 +210,55 @@ function deleteBuilder(table){
     return `DELETE FROM ${table} WHERE ${table}.id = $${1} RETURNING id`
 }
 
-function paramsBuilder(requestBody, patternMatching = false, allowedArrayValue = false, excludedKeys = []) {
-    // Extract keys and values from object data
-    const keys = Object.keys(requestBody)
-    const params = keys
-        .filter(key => !excludedKeys.includes(key)) // Exclude keys present in excludedKeys
-        .flatMap(key => {
-            const value = requestBody[key]
-            if(Array.isArray(value) && allowedArrayValue){
-                return value
-            }else if(typeof value === 'string' && value.includes(',') && allowedArrayValue == true){
-                return value.split(',').map(val => isNaN(Number(val)) ? val : Number(val))
-            }else if(patternMatching && typeof value === 'string' && isNaN(Number(value))){
-                return [`%${value}%`]
-            }else{
-                return [value]
+function parametersBuilder(includes, alias, association, requestBody, strict = true){
+
+    let params = []
+
+    const valueModifier = (value) =>{
+        // chack if value is nested array
+        if(Array.isArray(value)){
+            value.forEach(val => valueModifier(val))
+    
+        // check if value is string
+        }else if(!strict && typeof value === 'string' && isNaN(Number(value))){
+            params.push(`%${value}%`)
+    
+        }else if (value) {
+            params.push(value)
+        }
+    }
+
+    const fillParams = (includes, alias, association) => {
+
+        const modifyIncludes = includes.map( item => [item, `${item}_start`, `${item}_end`]).flat()
+
+        Object.keys(requestBody).forEach(key => {
+            if(alias && alias[key]){
+                valueModifier(requestBody[alias[key]])
+
+            }else if(modifyIncludes.includes(key)){
+                valueModifier(requestBody[key])
             }
         })
 
-    return params.flat()
+        if(association && Array.isArray(association)){
+            association.forEach(assoc => {
+                fillParams(assoc.includes, assoc.alias, assoc.association)
+            })
+        }
+    }
+
+    fillParams(includes, alias, association)
+
+    return params
 }
+
 async function runQuery(query, params, pool, logging = true){
     try {
-        if(logging) console.log(`Run Query : ${query}`)
+        if(logging) console.log(JSON.stringify({
+            query : `${query}`,
+            param : params
+        }, null, 4))
 
         const result = await pool.query(query, params)
 
@@ -239,7 +267,9 @@ async function runQuery(query, params, pool, logging = true){
         return result.rows
 
     } catch (error) {
+
         console.error(`Run Query Error : `, error)
+
         throw error
     }
 }
@@ -252,8 +282,8 @@ module.exports = {
             runQuery: (query, params, pool) => runQuery(query, params, pool, config.logging),
             createBuilder, selectBuilder, joinBuilder, 
             whereBuilder, pagingBuilder, updateBuilder, 
-            deleteBuilder, paramsBuilder, sortBuilder,
-            sumBuilder, groupBuilder
+            deleteBuilder, sortBuilder, sumBuilder, 
+            groupBuilder, parametersBuilder
         }
     }
 }

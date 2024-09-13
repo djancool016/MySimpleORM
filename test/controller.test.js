@@ -21,7 +21,7 @@ const testCases = {
                 body: {
                     id: 7654,
                     role_id: 1,
-                    userName: 'TestUser1',
+                    username: 'TestUser1',
                     password: '1234',
                     email: 'email@gmail.com',
                     name: 'DwiJ',
@@ -36,7 +36,7 @@ const testCases = {
             input: {
                 body: {
                     role_idX: 1,
-                    userName: 'TestUser1',
+                    username: 'TestUser1',
                     password: '1234',
                     email: 'email@gmail.com',
                     name: 'DwiJ',

@@ -48,8 +48,13 @@ const testCases = {
         },
         {
             input: {register: 'Register Description'},
-            output: 'contain: WHERE register.description = $1',
+            output: 'contain: WHERE register.description ILIKE $1',
             description: 'Read By foreign table register'
+        },
+        {
+            input: {date: "2024-10-01"},
+            output: 'contain: WHERE transaction.date = $1',
+            description: 'Read By date'
         },
         {
             input: {coa_code: 1010},
@@ -69,6 +74,13 @@ const testCases = {
             description: 'Create SUM Query'
         }
     ],
+    params: [
+        {
+            input: {sum:['amount'], coa_code:[1010,2010,3010], group_by: ['coa_code','coa', 'dc'], date_start: "2024-10-01", date_end: "2024-10-30"},
+            output: ["2024-10-01", "2024-10-30", 1010, 2010, 3010],
+            description: 'Generate parameter from requestBody'
+        }
+    ]
 }
 
 const includesObj = {
