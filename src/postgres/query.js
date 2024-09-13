@@ -223,7 +223,7 @@ function parametersBuilder(includes, alias, association, requestBody, strict = t
         }else if(!strict && typeof value === 'string' && isNaN(Number(value))){
             params.push(`%${value}%`)
     
-        }else if (value) {
+        }else if (value !== undefined && value !== null) {
             params.push(value)
         }
     }

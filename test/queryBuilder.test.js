@@ -60,6 +60,11 @@ const testCases = {
             input: {coa_code: 1010},
             output: 'contain: WHERE entry.coa_code = $1',
             description: 'Read By foreign table register'
+        },
+        {
+            input: {unknownKey: 'Unknown Value'},
+            output: {message: 'ER_BAD_FIELD_ERROR'},
+            description: 'Read By unknown key should return ER_NOT_FOUND'
         }
     ],
     sum: [

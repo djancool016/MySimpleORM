@@ -16,7 +16,7 @@ class Model {
     }
     async findAll(requestBody) {
         if (typeof requestBody !== 'object' || requestBody === undefined) throw errorCode.ER_INVALID_BODY
-        return this.#runQuery('read', requestBody)
+        return this.#runQuery('readAll', requestBody)
     }
     async findByKeys(requestBody, strict = false) {
         if(!requestBody || hasEmptyValue(requestBody)) throw errorCode.ER_INVALID_BODY

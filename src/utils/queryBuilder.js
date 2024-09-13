@@ -72,7 +72,9 @@ class SelectQueryBuilder extends QueryBuilder {
         const {whereBuilder} = this.dbmsBuilder
         const {table = '', includes = [], association = []} = this.model
         const {strict, ...requestBody} = this.requestBody
-        this.query += whereBuilder(table, includes, association, requestBody, strict) + ' '
+        const query = whereBuilder(table, includes, association, requestBody, strict)
+        if(!query) throw new Error('ER_BAD_FIELD_ERROR')
+        this.query += query + ' '
         return this
     }
     get paging(){
@@ -93,7 +95,7 @@ class SelectQueryBuilder extends QueryBuilder {
         return this
     }
     get build(){
-        return this.select.from.join.where.sort.paging.group.query.trim()
+        return this.query.trim()
     }
 }
 
@@ -141,7 +143,8 @@ module.exports = {
             queryBuilder: (model) => {
                 return {
                     create: (requestBody) => new CreateQueryBuilder(model, requestBody, dbmsBuilder).create.build,
-                    read: (requestBody) => new SelectQueryBuilder(model, requestBody, dbmsBuilder).build,
+                    read: (requestBody) => new SelectQueryBuilder(model, requestBody, dbmsBuilder).select.from.join.where.sort.paging.group.build,
+                    readAll: (requestBody) => new SelectQueryBuilder(model, requestBody, dbmsBuilder).select.from.join.sort.paging.group.build,
                     sum: (requestBody) => new SumQueryBuilder(model, requestBody, dbmsBuilder).build,
                     update: (requestBody) => new UpdateQueryBuilder(model, requestBody, dbmsBuilder).update.build,
                     delete: (requestBody) => new DeleteQueryBuilder(model, requestBody, dbmsBuilder).delete.build,
