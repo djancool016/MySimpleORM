@@ -85,20 +85,24 @@ class UnitTestFramework {
                     // Validate arrays by ensuring they contain expected objects
                     expect(result).toEqual(expect.arrayContaining(
                         output.map(out => {
-                            const modifiedOut = Object.entries(out).reduce((acc, [key, value]) => {
-                                // Check if the value contains 'random_'
-                                if (value === 'random string') {
-                                  // Replace with the appropriate expect.any() based on the type you expect
-                                  acc[key] = expect.any(String)  // Assuming 'random_' indicates a random string
-                                } else if (value === 'random number') {
-                                  acc[key] = expect.any(Number)  // For 'random_' numbers
-                                } else {
-                                  // Keep the original value if no 'random_' is found
-                                  acc[key] = value
-                                }
-                                return acc
-                              }, {})
-                            return expect.objectContaining(modifiedOut)
+                            if(typeof out === 'object'){
+                                const modifiedOut = Object.entries(out).reduce((acc, [key, value]) => {
+                                    // Check if the value contains 'random_'
+                                    if (value === 'random string') {
+                                      // Replace with the appropriate expect.any() based on the type you expect
+                                      acc[key] = expect.any(String)  // Assuming 'random_' indicates a random string
+                                    } else if (value === 'random number') {
+                                      acc[key] = expect.any(Number)  // For 'random_' numbers
+                                    } else {
+                                      // Keep the original value if no 'random_' is found
+                                      acc[key] = value
+                                    }
+                                    return acc
+                                  }, {})
+                                return expect.objectContaining(modifiedOut)
+                            }else{
+                                return out
+                            }
                         })
                     ))
                 }else if(hasNestedObject(output) || hasNestedObject(result) || hasRandomValue(output)){
