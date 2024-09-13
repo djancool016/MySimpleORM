@@ -12,6 +12,7 @@ module.exports = {
         const customError = require('./utils/customError')
         const httpLogger = require('./utils/httpLogger')
         const modelMapper = require('./utils/modelMapper')
+        const helperUtils = require('./utils/helperUtils')
 
         return {
             databaseManager,
@@ -27,7 +28,8 @@ module.exports = {
             ApiTestFramework,
             customError,
             httpLogger,
-            modelMapper
+            modelMapper,
+            helperUtils
         }
     }
 }
