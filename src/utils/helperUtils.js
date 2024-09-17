@@ -1,31 +1,30 @@
-const {parse, isValid} = require('date-fns')
+const {parse, isValid, format} = require('date-fns')
 
-function isDateOrDateTime(data) {
+const dateFormats = [
+    "yyyy-MM-dd",
+    "yyyy/MM/dd",
+    "dd-MM-yyyy",
+    "dd/MM/yyyy",
+    "MM-dd-yyyy",
+    "MM/dd/yyyy",
+    "yyyy-MM-dd HH:mm:ss",
+    "yyyy/MM/dd HH:mm:ss",
+    "dd-MM-yyyy HH:mm:ss",
+    "dd/MM/yyyy HH:mm:ss",
+    "MM-dd-yyyy HH:mm:ss",
+    "MM/dd/yyyy HH:mm:ss",
+    "yyyy-MM-dd'T'HH:mm:ss",
+    "yyyy-MM-dd HH:mm:ss.SSS",
+    "yyyy-MM-dd'T'HH:mm:ss.SSSX", // ISO format
+    "yyyy-MM-dd'T'HH:mm:ssX"      // ISO format without milliseconds
+]
 
-    if (typeof data !== 'string') {
-        return false
-    }
+function isDateOrDateTime(date) {
 
-    const dateFormats = [
-        "yyyy-MM-dd",
-        "yyyy/MM/dd",
-        "dd-MM-yyyy",
-        "dd/MM/yyyy",
-        "MM-dd-yyyy",
-        "MM/dd/yyyy",
-        "yyyy-MM-dd HH:mm:ss",
-        "yyyy/MM/dd HH:mm:ss",
-        "dd-MM-yyyy HH:mm:ss",
-        "dd/MM/yyyy HH:mm:ss",
-        "MM-dd-yyyy HH:mm:ss",
-        "MM/dd/yyyy HH:mm:ss",
-        "yyyy-MM-dd HH:mm:ss.SSS",
-        "yyyy-MM-dd'T'HH:mm:ss.SSSX", // ISO format
-        "yyyy-MM-dd'T'HH:mm:ssX"      // ISO format without milliseconds
-    ]
+    if (typeof date !== 'string') return false
 
-    for (const format of dateFormats) {
-            const parsedDate = parse(data, format, new Date())
+    for (const item of dateFormats) {
+            const parsedDate = parse(date, item, new Date())
             if (isValid(parsedDate)) {
             return true
         }
@@ -33,4 +32,20 @@ function isDateOrDateTime(data) {
 
     return false
 }
-module.exports = {isDateOrDateTime}
+
+function formatDate(date, dateFormat = 'yyyy-MM-dd'){
+
+    if (typeof date !== 'string') return null
+
+    for (const item of dateFormats) {
+        const parsedDate = parse(date, item, new Date())
+        if (isValid(parsedDate)) {
+            return format(parsedDate, dateFormat)
+        }
+    }
+
+    return null
+}
+
+module.exports = {isDateOrDateTime, formatDate}
+
