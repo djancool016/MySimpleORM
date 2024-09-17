@@ -63,7 +63,7 @@ const testCases = {
         },
         {
             input: {unknownKey: 'Unknown Value'},
-            output: {message: 'ER_BAD_FIELD_ERROR'},
+            output: {code: 'ER_BAD_FIELD_ERROR'},
             description: 'Read By unknown key should return ER_NOT_FOUND'
         }
     ],

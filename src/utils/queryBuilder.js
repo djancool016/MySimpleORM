@@ -1,3 +1,5 @@
+const {errorCode} = require('./customError')
+
 class QueryBuilder {
     constructor(model, requestBody, dbmsBuilder){
         this.query = ''
@@ -73,7 +75,7 @@ class SelectQueryBuilder extends QueryBuilder {
         const {table = '', includes = [], association = []} = this.model
         const {strict, ...requestBody} = this.requestBody
         const query = whereBuilder(table, includes, association, requestBody, strict)
-        if(!query) throw new Error('ER_BAD_FIELD_ERROR')
+        if(!query) throw errorCode.ER_BAD_FIELD_ERROR
         this.query += query + ' '
         return this
     }
