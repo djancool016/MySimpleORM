@@ -180,6 +180,8 @@ function wherePlaceholderBuilder(key, value, idx = 0, strict = false) {
 
 function pagingBuilder(requestBody){
     
+    if(requestBody?.no_paging === true) return ''
+
     const page = requestBody?.page || 1
     const pageSize = requestBody?.page_size || 10
 
@@ -262,7 +264,7 @@ async function runQuery(query, params, pool, logging = true){
 
         const result = await pool.query(query, params)
 
-        if(logging) console.log(`Result : ${JSON.stringify(result.rows)}`)
+        if(logging) console.log(`Result : ${JSON.stringify(result.rows).substring(0, 497)}...`)
 
         return result.rows
 
